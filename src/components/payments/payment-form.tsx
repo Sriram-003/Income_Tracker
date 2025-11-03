@@ -131,9 +131,9 @@ export function PaymentForm() {
 
       toast({
         title: 'Payment Recorded',
-        description: `Successfully recorded payment of $${data.amount.toFixed(
-          2
-        )} for ${selectedClient.name}.`,
+        description: `Payment for ${
+          selectedClient.name
+        } recorded. New balance is $${newBalance.toFixed(2)}.`,
       });
       form.reset();
       setSelectedClient(null);
