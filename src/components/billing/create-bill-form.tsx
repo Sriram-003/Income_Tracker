@@ -39,10 +39,10 @@ import {
   updateDocumentNonBlocking,
 } from '@/firebase';
 import type { Client, Product, ClientProductPrice } from '@/lib/types';
-import { PlusCircle, Trash2, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, FileText, ArrowLeft } from 'lucide-react';
 import { BillPreview } from './bill-preview';
 import { ContentSuggestion } from './content-suggestion';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const billItemSchema = z.object({
@@ -97,7 +97,11 @@ export function CreateBillForm() {
 
   const clientPricesQuery = useMemoFirebase(() => {
     if (!user || !watchClientId) return null;
-    return collection(firestore, `/admin_users/${user.uid}/client_accounts/${watchClientId}/client_product_prices`);
+    const pricesRef = collection(
+      firestore,
+      `/admin_users/${user.uid}/client_product_prices`
+    );
+    return query(pricesRef, where('clientId', '==', watchClientId));
   }, [firestore, user, watchClientId]);
 
   const { data: clientPrices } = useCollection<ClientProductPrice>(clientPricesQuery);
@@ -120,13 +124,11 @@ export function CreateBillForm() {
         form.setValue(`items.${index}.isTemp`, false);
         form.setValue(`items.${index}.productName`, product.name);
         
-        // Check for client-specific price first
         const clientPrice = clientPrices?.find(cp => cp.productId === productId);
         if (clientPrice) {
           form.setValue(`items.${index}.price`, clientPrice.price);
         } else {
-          // Fallback to default product price
-          form.setValue(`items.${index}.price`, product.defaultPrice);
+          form.setValue(`items.${index}.price`, product.defaultPrice || 0);
         }
       }
     }
@@ -169,7 +171,7 @@ export function CreateBillForm() {
         );
         data.items.forEach((item) => {
           addDocumentNonBlocking(billItemsCollectionRef, {
-            productId: item.isTemp ? billId + '-' + Date.now() : item.productId, // Create a temp ID
+            productId: item.isTemp ? billId + '-' + Date.now() : item.productId,
             productName: item.productName,
             quantity: item.quantity,
             price: item.price,
@@ -180,7 +182,6 @@ export function CreateBillForm() {
           });
         });
 
-        // Update client balance
         const clientRef = doc(firestore, `admin_users/${user.uid}/client_accounts/${data.clientId}`);
         updateDocumentNonBlocking(clientRef, {
           balance: selectedClient.balance + billTotal
@@ -203,6 +204,15 @@ export function CreateBillForm() {
     }
   };
 
+  const createNewBill = () => {
+    setBillDetails(null);
+    setSelectedClient(null);
+    form.reset({
+      clientId: '',
+      items: [{ productId: '', productName: '', quantity: 1, price: 0, isTemp: false }],
+    });
+  };
+
   if (billDetails && selectedClient && products) {
     const billTotal = billDetails.items.reduce(
       (acc, item) => acc + item.quantity * item.price,
@@ -211,21 +221,29 @@ export function CreateBillForm() {
     const newBalance = selectedClient.balance + billTotal;
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <BillPreview
-            client={selectedClient}
-            products={products}
-            billDetails={billDetails}
-          />
+      <div className="space-y-6">
+        <div className="flex justify-start">
+          <Button variant="outline" onClick={createNewBill}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Create New Bill
+          </Button>
         </div>
-        <div className="lg:col-span-1">
-          <ContentSuggestion
-            clientName={selectedClient.name}
-            pastBalance={selectedClient.balance}
-            billAmount={billTotal}
-            currentBalance={newBalance}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <BillPreview
+              client={selectedClient}
+              products={products}
+              billDetails={billDetails}
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <ContentSuggestion
+              clientName={selectedClient.name}
+              pastBalance={selectedClient.balance}
+              billAmount={billTotal}
+              currentBalance={newBalance}
+            />
+          </div>
         </div>
       </div>
     );

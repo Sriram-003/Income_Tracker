@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,12 +25,14 @@ import {
 } from '@/components/ui/form';
 import {
   addDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking,
   useCollection,
   useFirestore,
   useUser,
   useMemoFirebase,
 } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -41,9 +42,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import type { Client } from '@/lib/types';
+import type { Client, Product, ClientProductPrice } from '@/lib/types';
 
 const clientPriceSchema = z.object({
+  id: z.string().optional(), // For existing prices
   clientId: z.string().min(1, 'Client is required.'),
   price: z.coerce.number().min(0, 'Price must be a positive number.'),
 });
@@ -51,13 +53,19 @@ const clientPriceSchema = z.object({
 const productFormSchema = z.object({
   name: z.string().min(2, 'Product name must be at least 2 characters.'),
   image: z.any().optional(),
+  imageUrl: z.string().optional(),
   clientPrices: z.array(clientPriceSchema).optional(),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
 
-export function AddProductDialog() {
-  const [open, setOpen] = useState(false);
+type EditProductDialogProps = {
+  product: Product;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export function EditProductDialog({ product, open, onOpenChange }: EditProductDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
@@ -69,116 +77,114 @@ export function AddProductDialog() {
   }, [firestore, user]);
   const { data: clients } = useCollection<Client>(clientsQuery);
 
+  const pricesQuery = useMemoFirebase(() => {
+    if (!user || !product) return null;
+    const pricesRef = collection(firestore, `admin_users/${user.uid}/client_product_prices`);
+    return query(pricesRef, where('productId', '==', product.id));
+  }, [firestore, user, product]);
+  const { data: initialPrices } = useCollection<ClientProductPrice>(pricesQuery);
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
-      name: '',
+      name: product.name,
+      imageUrl: product.imageUrl,
       clientPrices: [],
     },
   });
-  
-  const { fields, append, remove } = useFieldArray({
+
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: "clientPrices"
   });
+  
+  useEffect(() => {
+    if (initialPrices) {
+      replace(initialPrices);
+    }
+  }, [initialPrices, replace]);
+
+  useEffect(() => {
+    form.reset({
+      name: product.name,
+      imageUrl: product.imageUrl,
+      clientPrices: initialPrices || [],
+    });
+  }, [product, initialPrices, form]);
+
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in to add a product.',
-      });
-      return;
-    }
+    if (!user) return;
     setIsSubmitting(true);
 
-    let imageUrl = '';
+    let newImageUrl = product.imageUrl || '';
     const imageFile = data.image?.[0];
 
     if (imageFile) {
-      try {
-        const storage = getStorage();
-        const storageRef = ref(
-          storage,
-          `products/${user.uid}/${Date.now()}_${imageFile.name}`
-        );
-        const uploadResult = await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(uploadResult.ref);
-      } catch (error) {
-        console.error('Image upload failed:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Image Upload Failed',
-          description: 'Could not upload the product image. Please try again.',
-        });
-        setIsSubmitting(false);
-        return;
-      }
+      const storage = getStorage();
+      const storageRef = ref(storage, `products/${user.uid}/${Date.now()}_${imageFile.name}`);
+      const uploadResult = await uploadBytes(storageRef, imageFile);
+      newImageUrl = await getDownloadURL(uploadResult.ref);
     }
 
     try {
-      const productsCollectionRef = collection(
-        firestore,
-        `/admin_users/${user.uid}/products`
-      );
-      const productDocRef = await addDocumentNonBlocking(productsCollectionRef, {
+      // Update product name and image
+      const productRef = doc(firestore, `/admin_users/${user.uid}/products`, product.id);
+      await updateDocumentNonBlocking(productRef, {
         name: data.name,
-        adminId: user.uid,
-        createdAt: serverTimestamp(),
-        imageUrl: imageUrl,
-        defaultPrice: 0,
+        imageUrl: newImageUrl,
       });
+      
+      const pricesCollectionRef = collection(firestore, `/admin_users/${user.uid}/client_product_prices`);
+      
+      // Figure out which prices to add, update, or delete
+      const incomingPrices = data.clientPrices || [];
+      const existingPrices = initialPrices || [];
 
-      if (productDocRef && data.clientPrices) {
-        const clientProductPricesCollectionRef = collection(
-          firestore,
-          `admin_users/${user.uid}/client_product_prices`
-        );
-        for (const clientPrice of data.clientPrices) {
-           await addDocumentNonBlocking(clientProductPricesCollectionRef, {
-            clientId: clientPrice.clientId,
-            productId: productDocRef.id,
-            price: clientPrice.price,
-            createdAt: serverTimestamp(),
-            adminId: user.uid,
-          });
-        }
+      // Prices to add
+      const pricesToAdd = incomingPrices.filter(p => !p.id);
+      for (const price of pricesToAdd) {
+        await addDocumentNonBlocking(pricesCollectionRef, {
+          ...price,
+          productId: product.id,
+          adminId: user.uid,
+          createdAt: serverTimestamp(),
+        });
       }
 
-      toast({
-        title: 'Product Added',
-        description: `Successfully added ${data.name}.`,
-      });
+      // Prices to update
+      const pricesToUpdate = incomingPrices.filter(p => p.id && existingPrices.some(e => e.id === p.id && e.price !== p.price));
+      for (const price of pricesToUpdate) {
+        const priceRef = doc(pricesCollectionRef, price.id);
+        await updateDocumentNonBlocking(priceRef, { price: price.price });
+      }
+      
+      // Prices to delete
+      const pricesToDelete = existingPrices.filter(e => !incomingPrices.some(p => p.id === e.id));
+      for (const price of pricesToDelete) {
+        const priceRef = doc(pricesCollectionRef, price.id);
+        await deleteDocumentNonBlocking(priceRef);
+      }
+
+
+      toast({ title: 'Product Updated', description: `${data.name} has been updated.` });
+      onOpenChange(false);
     } catch (error) {
-       toast({
-        variant: 'destructive',
-        title: 'Failed to add product',
-        description: 'An error occurred while saving the product.',
-      });
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update product.' });
+    } finally {
+      setIsSubmitting(false);
     }
-
-
-    setIsSubmitting(false);
-    setOpen(false);
-    form.reset();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>Edit Product</DialogTitle>
               <DialogDescription>
-                Add a new product and set prices for specific clients.
+                Update the product details and client-specific prices.
               </DialogDescription>
             </DialogHeader>
 
@@ -188,9 +194,7 @@ export function AddProductDialog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Product Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Organic Apples" {...field} />
-                  </FormControl>
+                  <FormControl><Input {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -201,13 +205,9 @@ export function AddProductDialog() {
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Product Image (Optional)</FormLabel>
+                  <FormLabel>New Image (Optional)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => field.onChange(e.target.files)}
-                    />
+                    <Input type="file" accept="image/*" onChange={(e) => field.onChange(e.target.files)} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -215,7 +215,7 @@ export function AddProductDialog() {
             />
             
             <div>
-              <FormLabel>Client Prices (Optional)</FormLabel>
+              <FormLabel>Client Prices</FormLabel>
               <div className="space-y-2 mt-2">
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex items-center gap-2">
@@ -226,15 +226,11 @@ export function AddProductDialog() {
                         <FormItem className="flex-1">
                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Client" />
-                              </SelectTrigger>
+                              <SelectTrigger><SelectValue placeholder="Select Client" /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {clients?.map((client) => (
-                                <SelectItem key={client.id} value={client.id}>
-                                  {client.name}
-                                </SelectItem>
+                                <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -267,22 +263,14 @@ export function AddProductDialog() {
                 className="mt-2"
                 onClick={() => append({ clientId: '', price: 0 })}
               >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Client Price
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Client Price
               </Button>
             </div>
 
-
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving...' : 'Save Product'}
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>
           </form>
