@@ -24,14 +24,30 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { addDocumentNonBlocking, useFirestore, useUser } from '@/firebase';
+import {
+  addDocumentNonBlocking,
+  useCollection,
+  useFirestore,
+  useUser,
+  useMemoFirebase,
+} from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import type { Client } from '@/lib/types';
 
 const productFormSchema = z.object({
   name: z.string().min(2, 'Product name must be at least 2 characters.'),
   image: z.any().optional(),
+  clientId: z.string().optional(),
+  price: z.coerce.number().optional(),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
@@ -43,10 +59,18 @@ export function AddProductDialog() {
   const { user } = useUser();
   const { toast } = useToast();
 
+  const clientsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `admin_users/${user.uid}/client_accounts`);
+  }, [firestore, user]);
+  const { data: clients } = useCollection<Client>(clientsQuery);
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: '',
+      clientId: '',
+      price: 0,
     },
   });
 
@@ -85,23 +109,45 @@ export function AddProductDialog() {
       }
     }
 
-    const productsCollectionRef = collection(
-      firestore,
-      `/admin_users/${user.uid}/products`
-    );
+    try {
+      const productsCollectionRef = collection(
+        firestore,
+        `/admin_users/${user.uid}/products`
+      );
+      const productDocRef = await addDocumentNonBlocking(productsCollectionRef, {
+        name: data.name,
+        adminId: user.uid,
+        createdAt: serverTimestamp(),
+        imageUrl: imageUrl,
+        defaultPrice: 0,
+      });
 
-    addDocumentNonBlocking(productsCollectionRef, {
-      name: data.name,
-      adminId: user.uid,
-      createdAt: serverTimestamp(),
-      imageUrl: imageUrl,
-      defaultPrice: 0, // Defaulting to 0 as prices are client-specific
-    });
+      if (productDocRef && data.clientId && data.price) {
+        const clientProductPricesCollectionRef = collection(
+          firestore,
+          `/admin_users/${user.uid}/client_accounts/${data.clientId}/client_product_prices`
+        );
+        await addDocumentNonBlocking(clientProductPricesCollectionRef, {
+          clientId: data.clientId,
+          productId: productDocRef.id,
+          price: data.price,
+          createdAt: serverTimestamp(),
+        });
+      }
 
-    toast({
-      title: 'Product Added',
-      description: `Successfully added ${data.name}.`,
-    });
+      toast({
+        title: 'Product Added',
+        description: `Successfully added ${data.name}.`,
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Failed to add product',
+        description: 'An error occurred while saving the product.',
+      });
+    }
+
+
     setIsSubmitting(false);
     setOpen(false);
     form.reset();
@@ -121,8 +167,7 @@ export function AddProductDialog() {
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
               <DialogDescription>
-                Add a new product to your catalog. You can set client-specific
-                prices later.
+                Add a new product and set a default price for a specific client.
               </DialogDescription>
             </DialogHeader>
 
@@ -157,6 +202,49 @@ export function AddProductDialog() {
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="clientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a client" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">-- None --</SelectItem>
+                        {clients?.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default Price</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
 
             <DialogFooter>
               <Button
