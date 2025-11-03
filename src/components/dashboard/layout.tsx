@@ -30,7 +30,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth, useUser } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, updateProfile } from 'firebase/auth';
+import { useEffect } from 'react';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -54,6 +55,12 @@ export default function DashboardLayout({
   const adminAvatar = placeholderImages.find(
     (img: ImagePlaceholder) => img.id === 'admin-avatar'
   );
+  
+  useEffect(() => {
+    if (user && !user.displayName) {
+      updateProfile(user, { displayName: 'Admin' });
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -111,8 +118,8 @@ export default function DashboardLayout({
                   <Avatar className="h-8 w-8">
                     {adminAvatar && (
                       <AvatarImage
-                        src={adminAvatar.imageUrl}
-                        alt="Admin"
+                        src={user?.photoURL || adminAvatar.imageUrl}
+                        alt={user?.displayName || 'Admin'}
                         data-ai-hint={adminAvatar.imageHint}
                       />
                     )}
