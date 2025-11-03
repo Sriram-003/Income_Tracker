@@ -80,7 +80,7 @@ export default function ProductsPage() {
           <div>
             <CardTitle>Products</CardTitle>
             <CardDescription>
-              Manage your products and their pricing.
+              Manage your products and set client-specific prices.
             </CardDescription>
           </div>
           <AddProductDialog />
@@ -94,7 +94,6 @@ export default function ProductsPage() {
                 <span className="sr-only">Image</span>
               </TableHead>
               <TableHead>Product Name</TableHead>
-              <TableHead>Default Price</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
               </TableHead>
@@ -114,7 +113,6 @@ export default function ProductsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>${product.defaultPrice.toFixed(2)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -130,7 +128,7 @@ export default function ProductsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Set Custom Prices</DropdownMenuItem>
+                        <DropdownMenuItem>Set Client Prices</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive">
                           Delete
                         </DropdownMenuItem>

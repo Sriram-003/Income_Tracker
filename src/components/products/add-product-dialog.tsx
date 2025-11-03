@@ -12,16 +12,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,18 +27,18 @@ import {
 import { addDocumentNonBlocking, useFirestore, useUser } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const productFormSchema = z.object({
   name: z.string().min(2, 'Product name must be at least 2 characters.'),
-  description: z.string().optional(),
-  defaultPrice: z.coerce.number().min(0, 'Default price cannot be negative.'),
-  imageUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  image: z.instanceof(FileList).optional(),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
 
 export function AddProductDialog() {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -50,13 +47,10 @@ export function AddProductDialog() {
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: '',
-      description: '',
-      defaultPrice: 0,
-      imageUrl: '',
     },
   });
 
-  const onSubmit = (data: ProductFormData) => {
+  const onSubmit = async (data: ProductFormData) => {
     if (!user) {
       toast({
         variant: 'destructive',
@@ -65,19 +59,50 @@ export function AddProductDialog() {
       });
       return;
     }
+    setIsSubmitting(true);
 
-    const productsCollectionRef = collection(firestore, `/admin_users/${user.uid}/products`);
-    
+    let imageUrl = '';
+    const imageFile = data.image?.[0];
+
+    if (imageFile) {
+      try {
+        const storage = getStorage();
+        const storageRef = ref(
+          storage,
+          `products/${user.uid}/${Date.now()}_${imageFile.name}`
+        );
+        const uploadResult = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(uploadResult.ref);
+      } catch (error) {
+        console.error('Image upload failed:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Image Upload Failed',
+          description: 'Could not upload the product image. Please try again.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    const productsCollectionRef = collection(
+      firestore,
+      `/admin_users/${user.uid}/products`
+    );
+
     addDocumentNonBlocking(productsCollectionRef, {
-      ...data,
+      name: data.name,
       adminId: user.uid,
       createdAt: serverTimestamp(),
+      imageUrl: imageUrl,
+      defaultPrice: 0, // Defaulting to 0 as prices are client-specific
     });
 
     toast({
       title: 'Product Added',
       description: `Successfully added ${data.name}.`,
     });
+    setIsSubmitting(false);
     setOpen(false);
     form.reset();
   };
@@ -96,7 +121,8 @@ export function AddProductDialog() {
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
               <DialogDescription>
-                Fill in the details for your new product.
+                Add a new product to your catalog. You can set client-specific
+                prices later.
               </DialogDescription>
             </DialogHeader>
 
@@ -113,43 +139,19 @@ export function AddProductDialog() {
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="A short description of the product." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
-              name="defaultPrice"
+              name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Default Price</FormLabel>
+                  <FormLabel>Product Image (Optional)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/image.png" {...field} />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => field.onChange(e.target.files)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -157,8 +159,16 @@ export function AddProductDialog() {
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit">Save Product</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : 'Save Product'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
