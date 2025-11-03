@@ -12,7 +12,7 @@
  * - `/admin_users/{adminId}/client_product_prices/{clientProductPriceId}`: Prices for products, specific to a client and admin.
  * - `/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}`: Billing information for clients, managed by an admin.
  * - `/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}/bill_items/{billItemId}`: Line items for each bill.
- * - `/admin_users/{adminId}/client_accounts/{clientId}/income_entries/{incomeEntryId}`: Income entries related to a client.
+ * - `/admin_users/{adminId}/income_entries/{incomeEntryId}`: Income entries related to a client.
  *
  * Key Security Decisions:
  * - User listing is disabled to protect user privacy.
@@ -30,177 +30,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Admin user profile. Only the authenticated user can manage their own profile.
-     * @path /admin_users/{adminId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     * @principle Enforces user-ownership for profile management.
-     */
-    match /admin_users/{adminId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
-      allow get: if isOwner(adminId);
+    match /admin_users/{adminId} {
+      allow read, create, update: if isOwner(adminId);
+      allow delete: if false; // Prevent accidental deletion
       allow list: if false; // Prevent listing all users
 
-      allow create: if isOwner(adminId);
+      match /client_accounts/{clientId} {
+        allow read, list, create, update, delete: if isOwner(adminId);
 
-      allow update: if isOwner(adminId);
+        match /bills/{billId} {
+          allow read, list, create, update, delete: if isOwner(adminId);
 
-      allow delete: if false;
-    }
-
-    /**
-     * @description Client accounts belonging to an admin user. Only the admin can manage their client accounts.
-     * @path /admin_users/{adminId}/client_accounts/{clientId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     * @principle Enforces user-ownership for client account management.
-     */
-    match /admin_users/{adminId}/client_accounts/{clientId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
+          match /bill_items/{itemId} {
+            allow read, list, create, update, delete: if isOwner(adminId);
+          }
+        }
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      match /products/{productId} {
+        allow read, list, create, update, delete: if isOwner(adminId);
       }
-
-      allow get: if isOwner(adminId);
-      allow list: if isOwner(adminId);
-
-      allow create: if isOwner(adminId);
-
-      allow update: if isExistingOwner(adminId);
-
-      allow delete: if isExistingOwner(adminId);
-    }
-
-    /**
-     * @description Products belonging to an admin user. Only the admin can manage their products.
-     * @path /admin_users/{adminId}/products/{productId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     */
-    match /admin_users/{adminId}/products/{productId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
+      
+      match /client_product_prices/{priceId} {
+          allow read, list, create, update, delete: if isOwner(adminId);
       }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      
+      match /income_entries/{entryId} {
+          allow read, list, create, update, delete: if isOwner(adminId);
       }
-
-      allow get: if isOwner(adminId);
-      allow list: if isOwner(adminId);
-
-      allow create: if isOwner(adminId);
-
-      allow update: if isExistingOwner(adminId);
-
-      allow delete: if isExistingOwner(adminId);
-    }
-
-    /**
-     * @description Prices of products for specific clients, managed by an admin.
-     * @path /admin_users/{adminId}/client_product_prices/{clientProductPriceId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     */
-    match /admin_users/{adminId}/client_product_prices/{clientProductPriceId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(adminId);
-      allow list: if isOwner(adminId);
-
-      allow create: if isOwner(adminId);
-
-      allow update: if isExistingOwner(adminId);
-
-      allow delete: if isExistingOwner(adminId);
-    }
-
-    /**
-     * @description Bills for a specific client, managed by an admin.
-     * @path /admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     */
-    match /admin_users/{adminId}/client_accounts/{clientId}/bills/{billId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(adminId);
-      allow list: if isOwner(adminId);
-
-      allow create: if isOwner(adminId);
-
-      allow update: if isExistingOwner(adminId);
-
-      allow delete: if isExistingOwner(adminId);
-    }
-
-    /**
-     * @description Individual items within a bill, managed by an admin.
-     * @path /admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}/bill_items/{billItemId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     */
-    match /admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}/bill_items/{billItemId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(adminId);
-      allow list: if isOwner(adminId);
-
-      allow create: if isOwner(adminId);
-
-      allow update: if isExistingOwner(adminId);
-
-      allow delete: if isExistingOwner(adminId);
-    }
-
-    /**
-     * @description Income entries for a specific client, managed by an admin.
-     * @path /admin_users/{adminId}/client_accounts/{clientId}/income_entries/{incomeEntryId}
-     * @allow (create, update, get, list) if request.auth.uid == adminId
-     * @deny (create, update, get, list) if request.auth.uid != adminId
-     */
-    match /admin_users/{adminId}/client_accounts/{clientId}/income_entries/{incomeEntryId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(adminId);
-      allow list: if isOwner(adminId);
-
-      allow create: if isOwner(adminId);
-
-      allow update: if isExistingOwner(adminId);
-
-      allow delete: if isExistingOwner(adminId);
     }
   }
 }

@@ -393,21 +393,17 @@
         }
       },
       {
-        "path": "/admin_users/{adminId}/client_accounts/{clientId}/income_entries/{incomeEntryId}",
+        "path": "/admin_users/{adminId}/income_entries/{incomeEntryId}",
         "definition": {
           "entityName": "IncomeEntry",
           "schema": {
             "$ref": "#/backend/entities/IncomeEntry"
           },
-          "description": "Stores income entries for a specific client. Nested under client accounts. Includes denormalized `adminId` and `clientId` for authorization independence.",
+          "description": "Stores income entries for a specific client. Nested directly under the admin user for simpler queries.",
           "params": [
             {
               "name": "adminId",
               "description": "The unique identifier of the administrator user."
-            },
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the client account."
             },
             {
               "name": "incomeEntryId",
