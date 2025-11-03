@@ -35,6 +35,36 @@
       "description": "Admin user avatar",
       "imageUrl": "https://images.unsplash.com/photo-1600180758890-6b94519a8ba6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjIwNzc3MTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person portrait"
+    },
+    {
+      "id": "product-apples",
+      "description": "Organic Apples",
+      "imageUrl": "https://images.unsplash.com/photo-1602036907566-4070390a1075?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhcHBsZXN8ZW58MHx8fHwxNzYyMTgxNTY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "apples"
+    },
+    {
+      "id": "product-milk",
+      "description": "Whole Milk",
+      "imageUrl": "https://images.unsplash.com/photo-1574343193689-93e01f51291e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtaWxrJTIwY2FydG9ufGVufDB8fHx8MTc2MjE4MTgyMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "milk carton"
+    },
+    {
+      "id": "product-bread",
+      "description": "Sourdough Bread",
+      "imageUrl": "https://images.unsplash.com/photo-1590301157172-7ba48dd1c2b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzb3VyZG91Z2glMjBicmVhZHxlbnwwfHx8fDE3NjIxODg3NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sourdough bread"
+    },
+    {
+      "id": "product-eggs",
+      "description": "Free-range Eggs",
+      "imageUrl": "https://images.unsplash.com/photo-1613900050733-09d5dc8b36de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxlZ2clMjBjYXJ0b258ZW58MHx8fHwxNzYyMTg4NzU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "egg carton"
+    },
+    {
+      "id": "product-almond-butter",
+      "description": "Almond Butter",
+      "imageUrl": "https://images.unsplash.com/photo-1505252929202-c4f39cda4d49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhbG1vbmQlMjBidXR0ZXJ8ZW58MHx8fHwxNzYyMTg4NzU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "almond butter"
     }
   ]
 }

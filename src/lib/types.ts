@@ -10,7 +10,7 @@ export type Product = {
   id: string;
   name: string;
   defaultPrice: number;
-  unit: 'item' | 'kg' | 'g' | 'litre' | 'ml';
+  imageUrl: string;
 };
 
 export type BillItem = {

@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { products } from '@/lib/data';
-import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 export default function ProductsPage() {
   return (
@@ -46,8 +46,10 @@ export default function ProductsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="hidden w-[100px] sm:table-cell">
+                <span className="sr-only">Image</span>
+              </TableHead>
               <TableHead>Product Name</TableHead>
-              <TableHead>Unit</TableHead>
               <TableHead>Default Price</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -57,10 +59,16 @@ export default function ProductsPage() {
           <TableBody>
             {products.map((product) => (
               <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{product.unit}</Badge>
+                <TableCell className="hidden sm:table-cell">
+                  <Image
+                    alt={product.name}
+                    className="aspect-square rounded-md object-cover"
+                    height="64"
+                    src={product.imageUrl}
+                    width="64"
+                  />
                 </TableCell>
+                <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>${product.defaultPrice.toFixed(2)}</TableCell>
                 <TableCell>
                   <DropdownMenu>

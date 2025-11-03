@@ -39,11 +39,11 @@ export const clients: Client[] = [
 ];
 
 export const products: Product[] = [
-  { id: 'p1', name: 'Organic Apples', defaultPrice: 2.99, unit: 'kg' },
-  { id: 'p2', name: 'Whole Milk', defaultPrice: 1.5, unit: 'litre' },
-  { id: 'p3', name: 'Sourdough Bread', defaultPrice: 4.25, unit: 'item' },
-  { id: 'p4', name: 'Free-range Eggs', defaultPrice: 3.5, unit: 'item' },
-  { id: 'p5', name: 'Almond Butter', defaultPrice: 7.0, unit: 'item' },
+  { id: 'p1', name: 'Organic Apples', defaultPrice: 2.99, imageUrl: 'https://picsum.photos/seed/p1/100/100' },
+  { id: 'p2', name: 'Whole Milk', defaultPrice: 1.5, imageUrl: 'https://picsum.photos/seed/p2/100/100' },
+  { id: 'p3', name: 'Sourdough Bread', defaultPrice: 4.25, imageUrl: 'https://picsum.photos/seed/p3/100/100' },
+  { id: 'p4', name: 'Free-range Eggs', defaultPrice: 3.5, imageUrl: 'https://picsum.photos/seed/p4/100/100' },
+  { id: 'p5', name: 'Almond Butter', defaultPrice: 7.0, imageUrl: 'https://picsum.photos/seed/p5/100/100' },
 ];
 
 export const incomeData: IncomeEntry[] = [
