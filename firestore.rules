@@ -9,7 +9,7 @@
  * - `/admin_users/{adminId}`: Stores administrator user profiles.
  * - `/admin_users/{adminId}/client_accounts/{clientId}`: Stores client account information for each admin.
  * - `/admin_users/{adminId}/products/{productId}`: Stores product information managed by each admin.
- * - `/admin_users/{adminId}/client_accounts/{clientId}/client_product_prices/{clientProductPriceId}`: Prices for products, specific to a client and admin.
+ * - `/admin_users/{adminId}/client_product_prices/{clientProductPriceId}`: Prices for products, specific to a client and admin.
  * - `/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}`: Billing information for clients, managed by an admin.
  * - `/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}/bill_items/{billItemId}`: Line items for each bill.
  * - `/admin_users/{adminId}/client_accounts/{clientId}/income_entries/{incomeEntryId}`: Income entries related to a client.
@@ -105,11 +105,11 @@ service cloud.firestore {
 
     /**
      * @description Prices of products for specific clients, managed by an admin.
-     * @path /admin_users/{adminId}/client_accounts/{clientId}/client_product_prices/{clientProductPriceId}
+     * @path /admin_users/{adminId}/client_product_prices/{clientProductPriceId}
      * @allow (create, update, get, list) if request.auth.uid == adminId
      * @deny (create, update, get, list) if request.auth.uid != adminId
      */
-    match /admin_users/{adminId}/client_accounts/{clientId}/client_product_prices/{clientProductPriceId} {
+    match /admin_users/{adminId}/client_product_prices/{clientProductPriceId} {
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
@@ -204,3 +204,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

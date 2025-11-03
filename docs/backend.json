@@ -321,21 +321,17 @@
         }
       },
       {
-        "path": "/admin_users/{adminId}/client_accounts/{clientId}/client_product_prices/{clientProductPriceId}",
+        "path": "/admin_users/{adminId}/client_product_prices/{clientProductPriceId}",
         "definition": {
           "entityName": "ClientProductPrice",
           "schema": {
             "$ref": "#/backend/entities/ClientProductPrice"
           },
-          "description": "Stores the prices of products for specific clients.  Nested under client account for clear ownership. Includes denormalized `adminId` and `clientId` for authorization independence.",
+          "description": "Stores the prices of products for specific clients.  Nested under admin user for clear ownership. Includes denormalized `adminId` for authorization independence.",
           "params": [
             {
               "name": "adminId",
               "description": "The unique identifier of the administrator user."
-            },
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the client account."
             },
             {
               "name": "clientProductPriceId",
@@ -424,3 +420,4 @@
     "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily maintainable database for the LedgerSync application. The core principle is to ensure authorization independence, eliminating the need for complex `get()` calls in security rules. This is achieved through denormalization, specifically copying relevant authorization data (adminId for ownership) into child collections. The structure also emphasizes clarity and predictability. All collections are segregated based on security needs (admin-owned vs client-owned data). Path-based ownership is used where possible to simplify security rules. \n\n*   **Authorization Independence:** The `adminId` is copied into the `ClientAccount`, `Product`. This allows security rules in these collections to validate ownership without needing to perform a `get()` request on the `/admin_users/{adminId}` document.\n\n*   **QAPs (Rules are not Filters):** The segregation of data based on ownership (admin user) and path-based ownership `/admin_users/{adminId}/client_accounts/{clientId}` allow for efficient and secure `list` operations, as the security rules can simply check if `request.auth.uid == adminId` to authorize listing client accounts for a specific admin. Similarly, products and clients are grouped under the admin user.\n\n*   The use of hierarchical paths such as `/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}` makes securing the data based on admin and client ownership simple and efficient."
   }
 }
+    
