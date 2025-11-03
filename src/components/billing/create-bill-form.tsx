@@ -42,7 +42,7 @@ import type { Client, Product, ClientProductPrice } from '@/lib/types';
 import { PlusCircle, Trash2, FileText, ArrowLeft } from 'lucide-react';
 import { BillPreview } from './bill-preview';
 import { ContentSuggestion } from './content-suggestion';
-import { collection, serverTimestamp, doc, query, where } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, query, where, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const billItemSchema = z.object({
@@ -63,6 +63,7 @@ export type BillFormData = z.infer<typeof billFormSchema>;
 export function CreateBillForm() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [billDetails, setBillDetails] = useState<BillFormData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -134,22 +135,28 @@ export function CreateBillForm() {
     }
   };
 
-  const onSubmit = async (data: BillFormData) => {
-    if (!user || !selectedClient) {
+  const onPreview = (data: BillFormData) => {
+    setBillDetails(data);
+  };
+  
+  const handleConfirmAndSave = async () => {
+    if (!user || !selectedClient || !billDetails) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Client or user not found.',
+        description: 'Client, user or bill details not found.',
       });
       return;
     }
-    const billTotal = data.items.reduce(
+    setIsSaving(true);
+
+    const billTotal = billDetails.items.reduce(
       (acc, item) => acc + item.quantity * item.price,
       0
     );
 
     const billData = {
-      clientId: data.clientId,
+      clientId: billDetails.clientId,
       billDate: serverTimestamp(),
       totalAmount: billTotal,
       createdAt: serverTimestamp(),
@@ -158,51 +165,56 @@ export function CreateBillForm() {
 
     const billsCollectionRef = collection(
       firestore,
-      `admin_users/${user.uid}/client_accounts/${data.clientId}/bills`
+      `admin_users/${user.uid}/client_accounts/${billDetails.clientId}/bills`
     );
 
     try {
-      const docRef = await addDocumentNonBlocking(billsCollectionRef, billData);
-      if (docRef) {
-        const billId = docRef.id;
-        const billItemsCollectionRef = collection(
-          firestore,
-          `admin_users/${user.uid}/client_accounts/${data.clientId}/bills/${billId}/bill_items`
-        );
-        data.items.forEach((item) => {
-          addDocumentNonBlocking(billItemsCollectionRef, {
-            productId: item.isTemp ? billId + '-' + Date.now() : item.productId,
-            productName: item.productName,
-            quantity: item.quantity,
-            price: item.price,
-            billId: billId,
-            adminId: user.uid,
-            clientId: data.clientId,
-            createdAt: serverTimestamp(),
-          });
-        });
+       const docRef = await addDoc(billsCollectionRef, billData);
+       const billId = docRef.id;
 
-        const clientRef = doc(firestore, `admin_users/${user.uid}/client_accounts/${data.clientId}`);
-        updateDocumentNonBlocking(clientRef, {
-          balance: selectedClient.balance + billTotal
+       const billItemsCollectionRef = collection(
+        firestore,
+        `admin_users/${user.uid}/client_accounts/${billDetails.clientId}/bills/${billId}/bill_items`
+      );
+      
+      const itemPromises = billDetails.items.map((item) => {
+        return addDoc(billItemsCollectionRef, {
+          productId: item.isTemp ? billId + '-' + Date.now() : item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          price: item.price,
+          billId: billId,
+          adminId: user.uid,
+          clientId: billDetails.clientId,
+          createdAt: serverTimestamp(),
         });
-
-        toast({
-          title: 'Bill created',
-          description: 'The bill has been successfully saved.',
-        });
-        setBillDetails(data);
-      } else {
-        throw new Error('Failed to get document reference.');
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to create the bill.',
       });
+
+      await Promise.all(itemPromises);
+
+      const clientRef = doc(firestore, `admin_users/${user.uid}/client_accounts/${billDetails.clientId}`);
+      await updateDocumentNonBlocking(clientRef, {
+        balance: selectedClient.balance + billTotal
+      });
+
+      toast({
+        title: 'Bill Saved!',
+        description: 'The bill has been successfully saved and the client balance updated.',
+      });
+
+    } catch (error) {
+       console.error("Error saving bill: ", error);
+       toast({
+        variant: 'destructive',
+        title: 'Error Saving Bill',
+        description: 'An unexpected error occurred while saving the bill.',
+      });
+    } finally {
+      setIsSaving(false);
+      createNewBill();
     }
   };
+
 
   const createNewBill = () => {
     setBillDetails(null);
@@ -222,10 +234,13 @@ export function CreateBillForm() {
 
     return (
       <div className="space-y-6">
-        <div className="flex justify-start">
+        <div className="flex justify-between items-center">
           <Button variant="outline" onClick={createNewBill}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Create New Bill
+            Back to Form
+          </Button>
+           <Button onClick={handleConfirmAndSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Confirm & Save Bill'}
           </Button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -258,7 +273,7 @@ export function CreateBillForm() {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(onPreview)}>
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
@@ -410,3 +425,5 @@ export function CreateBillForm() {
     </Card>
   );
 }
+
+    
