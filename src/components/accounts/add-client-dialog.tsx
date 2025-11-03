@@ -15,22 +15,47 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { addDocumentNonBlocking, useAuth, useFirestore, useUser } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export function AddClientDialog() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [name, setName] = useState('John Doe');
+  const firestore = useFirestore();
+  const { user } = useUser();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Here you would typically handle form submission, e.g., send data to an API
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get('name') as string;
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to add a client.',
+      });
+      return;
+    }
+
+    const clientData = {
+      name: name,
+      adminId: user.uid,
+      createdAt: new Date().toISOString(),
+      balance: 0,
+      email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
+    };
+
+    const collectionRef = collection(
+      firestore,
+      `/admin_users/${user.uid}/client_accounts`
+    );
+    addDocumentNonBlocking(collectionRef, clientData);
 
     toast({
       title: 'Client Added',
       description: `Successfully added ${name} to your client list.`,
     });
-    setOpen(false); // Close dialog on successful submission
+    setOpen(false);
+    setName('John Doe');
   };
 
   return (
@@ -57,7 +82,8 @@ export function AddClientDialog() {
               <Input
                 id="name"
                 name="name"
-                defaultValue="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="col-span-3"
                 required
               />

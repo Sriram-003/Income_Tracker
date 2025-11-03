@@ -1,49 +1,54 @@
 import type { Client, Product, IncomeEntry } from './types';
+import placeholderData from '@/lib/placeholder-images.json';
+
+const findImage = (id: string) => {
+    return placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/100/100`;
+}
 
 export const clients: Client[] = [
   {
     id: '1',
     name: 'Amelia Johnson',
     email: 'amelia.j@example.com',
-    avatarUrl: 'https://picsum.photos/seed/101/100/100',
+    avatarUrl: findImage('avatar-1'),
     balance: 150.75,
   },
   {
     id: '2',
     name: 'Benjamin Carter',
     email: 'ben.carter@example.com',
-    avatarUrl: 'https://picsum.photos/seed/102/100/100',
+    avatarUrl: findImage('avatar-2'),
     balance: -320.0,
   },
   {
     id: '3',
     name: 'Olivia Martinez',
     email: 'olivia.m@example.com',
-    avatarUrl: 'https://picsum.photos/seed/103/100/100',
+    avatarUrl: findImage('avatar-3'),
     balance: 0,
   },
   {
     id: '4',
     name: 'Liam Garcia',
     email: 'liam.g@example.com',
-    avatarUrl: 'https://picsum.photos/seed/104/100/100',
+    avatarUrl: findImage('avatar-4'),
     balance: 50.25,
   },
   {
     id: '5',
     name: 'Sophia Rodriguez',
     email: 'sophia.r@example.com',
-    avatarUrl: 'https://picsum.photos/seed/105/100/100',
+    avatarUrl: findImage('avatar-5'),
     balance: -85.5,
   },
 ];
 
 export const products: Product[] = [
-  { id: 'p1', name: 'Organic Apples', defaultPrice: 2.99, imageUrl: 'https://picsum.photos/seed/p1/100/100' },
-  { id: 'p2', name: 'Whole Milk', defaultPrice: 1.5, imageUrl: 'https://picsum.photos/seed/p2/100/100' },
-  { id: 'p3', name: 'Sourdough Bread', defaultPrice: 4.25, imageUrl: 'https://picsum.photos/seed/p3/100/100' },
-  { id: 'p4', name: 'Free-range Eggs', defaultPrice: 3.5, imageUrl: 'https://picsum.photos/seed/p4/100/100' },
-  { id: 'p5', name: 'Almond Butter', defaultPrice: 7.0, imageUrl: 'https://picsum.photos/seed/p5/100/100' },
+  { id: 'p1', name: 'Organic Apples', defaultPrice: 2.99, imageUrl: findImage('product-apples') },
+  { id: 'p2', name: 'Whole Milk', defaultPrice: 1.5, imageUrl: findImage('product-milk') },
+  { id: 'p3', name: 'Sourdough Bread', defaultPrice: 4.25, imageUrl: findImage('product-bread') },
+  { id: 'p4', name: 'Free-range Eggs', defaultPrice: 3.5, imageUrl: findImage('product-eggs') },
+  { id: 'p5', name: 'Almond Butter', defaultPrice: 7.0, imageUrl: findImage('product-almond-butter') },
 ];
 
 export const incomeData: IncomeEntry[] = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,11 +30,19 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { clients, products } from '@/lib/data';
+import {
+  addDocumentNonBlocking,
+  useCollection,
+  useFirestore,
+  useMemoFirebase,
+  useUser,
+} from '@/firebase';
 import type { Client, Product } from '@/lib/types';
 import { PlusCircle, Trash2, FileText } from 'lucide-react';
 import { BillPreview } from './bill-preview';
 import { ContentSuggestion } from './content-suggestion';
+import { collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 const billItemSchema = z.object({
   productId: z.string().min(1, 'Product is required.'),
@@ -52,6 +60,21 @@ export type BillFormData = z.infer<typeof billFormSchema>;
 export function CreateBillForm() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [billDetails, setBillDetails] = useState<BillFormData | null>(null);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const clientsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `admin_users/${user.uid}/client_accounts`);
+  }, [firestore, user]);
+  const { data: clients } = useCollection<Client>(clientsQuery);
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `admin_users/${user.uid}/products`);
+  }, [firestore, user]);
+  const { data: products } = useCollection<Product>(productsQuery);
 
   const form = useForm<BillFormData>({
     resolver: zodResolver(billFormSchema),
@@ -69,41 +92,101 @@ export function CreateBillForm() {
   const watchClientId = form.watch('clientId');
   const watchItems = form.watch('items');
 
-  useState(() => {
-    const client = clients.find((c) => c.id === watchClientId);
-    setSelectedClient(client || null);
-  });
+  useEffect(() => {
+    if (clients) {
+      const client = clients.find((c) => c.id === watchClientId);
+      setSelectedClient(client || null);
+    }
+  }, [watchClientId, clients]);
 
   const handleProductChange = (productId: string, index: number) => {
-    const product = products.find((p) => p.id === productId);
+    const product = products?.find((p) => p.id === productId);
     if (product) {
       form.setValue(`items.${index}.price`, product.defaultPrice);
     }
   };
 
   const onSubmit = (data: BillFormData) => {
-    setBillDetails(data);
+    if (!user || !selectedClient) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Client or user not found.',
+      });
+      return;
+    }
+    const billTotal = data.items.reduce(
+      (acc, item) => acc + item.quantity * item.price,
+      0
+    );
+
+    const billData = {
+      clientId: data.clientId,
+      billDate: serverTimestamp(),
+      totalAmount: billTotal,
+      createdAt: serverTimestamp(),
+      adminId: user.uid,
+    };
+
+    const billsCollectionRef = collection(
+      firestore,
+      `admin_users/${user.uid}/client_accounts/${data.clientId}/bills`
+    );
+
+    addDocumentNonBlocking(billsCollectionRef, billData)
+      .then((docRef) => {
+        const billId = docRef.id;
+        const billItemsCollectionRef = collection(
+          firestore,
+          `admin_users/${user.uid}/client_accounts/${data.clientId}/bills/${billId}/bill_items`
+        );
+        data.items.forEach((item) => {
+          addDocumentNonBlocking(billItemsCollectionRef, {
+            ...item,
+            billId: billId,
+            adminId: user.uid,
+            clientId: data.clientId,
+            createdAt: serverTimestamp(),
+          });
+        });
+        toast({
+          title: 'Bill created',
+          description: 'The bill has been successfully saved.',
+        });
+        setBillDetails(data);
+      })
+      .catch(() => {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to create the bill.',
+        });
+      });
   };
 
-  if (billDetails && selectedClient) {
+  if (billDetails && selectedClient && products) {
     const billTotal = billDetails.items.reduce(
-        (acc, item) => acc + item.quantity * item.price,
-        0
-      );
+      (acc, item) => acc + item.quantity * item.price,
+      0
+    );
     const newBalance = selectedClient.balance + billTotal;
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-            <BillPreview client={selectedClient} products={products} billDetails={billDetails} />
+          <BillPreview
+            client={selectedClient}
+            products={products}
+            billDetails={billDetails}
+          />
         </div>
         <div className="lg:col-span-1">
-            <ContentSuggestion
-                clientName={selectedClient.name}
-                pastBalance={selectedClient.balance}
-                billAmount={billTotal}
-                currentBalance={newBalance}
-            />
+          <ContentSuggestion
+            clientName={selectedClient.name}
+            pastBalance={selectedClient.balance}
+            billAmount={billTotal}
+            currentBalance={newBalance}
+          />
         </div>
       </div>
     );
@@ -129,8 +212,6 @@ export function CreateBillForm() {
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
-                      const client = clients.find((c) => c.id === value);
-                      setSelectedClient(client || null);
                     }}
                     defaultValue={field.value}
                   >
@@ -140,11 +221,12 @@ export function CreateBillForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
+                      {clients &&
+                        clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -176,11 +258,15 @@ export function CreateBillForm() {
                               <SelectValue placeholder="Product" />
                             </SelectTrigger>
                             <SelectContent>
-                              {products.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  {product.name}
-                                </SelectItem>
-                              ))}
+                              {products &&
+                                products.map((product) => (
+                                  <SelectItem
+                                    key={product.id}
+                                    value={product.id}
+                                  >
+                                    {product.name}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         )}
@@ -194,23 +280,27 @@ export function CreateBillForm() {
                       />
                     </div>
                     <div className="col-span-4 sm:col-span-2">
-                       <Input
+                      <Input
                         type="number"
                         step="0.01"
                         placeholder="Price"
                         {...form.register(`items.${index}.price`)}
                       />
                     </div>
-                     <div className="col-span-4 sm:col-span-2">
+                    <div className="col-span-4 sm:col-span-2">
                       <Input
-                          type="text"
-                          readOnly
-                          value={
-                              (watchItems[index]?.quantity || 0) *
-                              (watchItems[index]?.price || 0)
-                          }
-                          placeholder="Total"
-                          className="bg-muted"
+                        type="text"
+                        readOnly
+                        value={
+                          watchItems[index]
+                            ? (
+                                (watchItems[index]?.quantity || 0) *
+                                (watchItems[index]?.price || 0)
+                              ).toFixed(2)
+                            : '0.00'
+                        }
+                        placeholder="Total"
+                        className="bg-muted"
                       />
                     </div>
                     <div className="col-span-12 sm:col-span-1 flex justify-end">
@@ -228,7 +318,9 @@ export function CreateBillForm() {
                 ))}
               </div>
               {form.formState.errors.items?.message && (
-                  <p className="text-sm font-medium text-destructive mt-2">{form.formState.errors.items.message}</p>
+                <p className="text-sm font-medium text-destructive mt-2">
+                  {form.formState.errors.items.message}
+                </p>
               )}
             </div>
 
