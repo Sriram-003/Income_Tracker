@@ -122,7 +122,7 @@ export function AddProductDialog() {
         defaultPrice: 0,
       });
 
-      if (productDocRef && data.clientId && data.price) {
+      if (productDocRef && data.clientId && data.clientId !== 'none' && data.price) {
         const clientProductPricesCollectionRef = collection(
           firestore,
           `/admin_users/${user.uid}/client_accounts/${data.clientId}/client_product_prices`
@@ -217,7 +217,7 @@ export function AddProductDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">-- None --</SelectItem>
+                        <SelectItem value="none">-- None --</SelectItem>
                         {clients?.map((client) => (
                           <SelectItem key={client.id} value={client.id}>
                             {client.name}
