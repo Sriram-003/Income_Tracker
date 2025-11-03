@@ -61,19 +61,8 @@ service cloud.firestore {
       match /income_entries/{entryId} {
           allow read, list, create, update, delete: if isOwner(adminId);
       }
-      
-      // Legacy paths for backwards compatibility during transition
-      // These should be removed after data migration.
-      match /client_accounts/{clientId}/bills/{billId} {
-         allow read, list, create, update, delete: if isOwner(adminId);
-         match /bill_items/{itemId} {
-              allow read, list, create, update, delete: if isOwner(adminId);
-         }
-      }
-       match /client_accounts/{clientId}/income_entries/{entryId} {
-          allow read, list, create, update, delete: if isOwner(adminId);
-      }
-
     }
   }
 }
+
+    
