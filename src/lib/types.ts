@@ -9,14 +9,17 @@ export type Client = {
 export type Product = {
   id: string;
   name: string;
+  description?: string;
   defaultPrice: number;
-  imageUrl: string;
+  imageUrl?: string;
 };
 
 export type BillItem = {
   productId: string;
+  productName: string; // Used for temp products
   quantity: number;
   price: number;
+  isTemp: boolean;
 };
 
 export type Bill = {

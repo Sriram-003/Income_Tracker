@@ -36,18 +36,21 @@ import {
   useFirestore,
   useMemoFirebase,
   useUser,
+  updateDocumentNonBlocking,
 } from '@/firebase';
 import type { Client, Product } from '@/lib/types';
 import { PlusCircle, Trash2, FileText } from 'lucide-react';
 import { BillPreview } from './bill-preview';
 import { ContentSuggestion } from './content-suggestion';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const billItemSchema = z.object({
   productId: z.string().min(1, 'Product is required.'),
+  productName: z.string(), // For temporary products
   quantity: z.coerce.number().min(0.01, 'Quantity must be positive.'),
   price: z.coerce.number().min(0, 'Price cannot be negative.'),
+  isTemp: z.boolean().default(false),
 });
 
 const billFormSchema = z.object({
@@ -80,7 +83,7 @@ export function CreateBillForm() {
     resolver: zodResolver(billFormSchema),
     defaultValues: {
       clientId: '',
-      items: [{ productId: '', quantity: 1, price: 0 }],
+      items: [{ productId: '', productName: '', quantity: 1, price: 0, isTemp: false }],
     },
   });
 
@@ -100,13 +103,21 @@ export function CreateBillForm() {
   }, [watchClientId, clients]);
 
   const handleProductChange = (productId: string, index: number) => {
-    const product = products?.find((p) => p.id === productId);
-    if (product) {
-      form.setValue(`items.${index}.price`, product.defaultPrice);
+    if (productId === 'temp-product') {
+      form.setValue(`items.${index}.isTemp`, true);
+      form.setValue(`items.${index}.productName`, '');
+      form.setValue(`items.${index}.price`, 0);
+    } else {
+      const product = products?.find((p) => p.id === productId);
+      if (product) {
+        form.setValue(`items.${index}.isTemp`, false);
+        form.setValue(`items.${index}.productName`, product.name);
+        form.setValue(`items.${index}.price`, product.defaultPrice);
+      }
     }
   };
 
-  const onSubmit = (data: BillFormData) => {
+  const onSubmit = async (data: BillFormData) => {
     if (!user || !selectedClient) {
       toast({
         variant: 'destructive',
@@ -133,8 +144,9 @@ export function CreateBillForm() {
       `admin_users/${user.uid}/client_accounts/${data.clientId}/bills`
     );
 
-    addDocumentNonBlocking(billsCollectionRef, billData)
-      .then((docRef) => {
+    try {
+      const docRef = await addDocumentNonBlocking(billsCollectionRef, billData);
+      if (docRef) {
         const billId = docRef.id;
         const billItemsCollectionRef = collection(
           firestore,
@@ -142,26 +154,38 @@ export function CreateBillForm() {
         );
         data.items.forEach((item) => {
           addDocumentNonBlocking(billItemsCollectionRef, {
-            ...item,
+            productId: item.isTemp ? billId + '-' + Date.now() : item.productId, // Create a temp ID
+            productName: item.productName,
+            quantity: item.quantity,
+            price: item.price,
             billId: billId,
             adminId: user.uid,
             clientId: data.clientId,
             createdAt: serverTimestamp(),
           });
         });
+
+        // Update client balance
+        const clientRef = doc(firestore, `admin_users/${user.uid}/client_accounts/${data.clientId}`);
+        updateDocumentNonBlocking(clientRef, {
+          balance: selectedClient.balance + billTotal
+        });
+
         toast({
           title: 'Bill created',
           description: 'The bill has been successfully saved.',
         });
         setBillDetails(data);
-      })
-      .catch(() => {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to create the bill.',
-        });
+      } else {
+        throw new Error('Failed to get document reference.');
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create the bill.',
       });
+    }
   };
 
   if (billDetails && selectedClient && products) {
@@ -242,8 +266,8 @@ export function CreateBillForm() {
                     key={field.id}
                     className="grid grid-cols-12 gap-2 items-start"
                   >
-                    <div className="col-span-12 sm:col-span-5">
-                      <Controller
+                    <div className="col-span-12 sm:col-span-4">
+                       <Controller
                         control={form.control}
                         name={`items.${index}.productId`}
                         render={({ field: controllerField }) => (
@@ -267,11 +291,20 @@ export function CreateBillForm() {
                                     {product.name}
                                   </SelectItem>
                                 ))}
+                                <SelectItem value="temp-product">-- Add Temporary Product --</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
                       />
                     </div>
+                    {watchItems[index]?.isTemp && (
+                      <div className="col-span-12 sm:col-span-4">
+                        <Input
+                          placeholder="Temporary Product Name"
+                          {...form.register(`items.${index}.productName`)}
+                        />
+                      </div>
+                    )}
                     <div className="col-span-4 sm:col-span-2">
                       <Input
                         type="number"
@@ -327,7 +360,7 @@ export function CreateBillForm() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => append({ productId: '', quantity: 1, price: 0 })}
+              onClick={() => append({ productId: '', productName: '', quantity: 1, price: 0, isTemp: false })}
             >
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Item

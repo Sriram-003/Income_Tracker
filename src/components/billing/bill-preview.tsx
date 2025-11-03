@@ -69,10 +69,9 @@ export function BillPreview({
           <TableBody>
             {billDetails.items.map((item, index) => {
               const product = products.find((p) => p.id === item.productId);
-              if (!product) return null;
               return (
                 <TableRow key={index}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="font-medium">{item.isTemp ? item.productName : product?.name}</TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-right">
                     ${item.price.toFixed(2)}

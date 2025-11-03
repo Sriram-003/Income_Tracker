@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +29,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddProductDialog } from '@/components/products/add-product-dialog';
 
 export default function ProductsPage() {
   const firestore = useFirestore();
@@ -45,13 +46,20 @@ export default function ProductsPage() {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Products</CardTitle>
+              <CardDescription>
+                Manage your products and their pricing.
+              </CardDescription>
+            </div>
+            <Skeleton className="h-9 w-28" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-4">
+              <div key={i} className="flex items-center space-x-4 p-4">
                 <Skeleton className="h-16 w-16 rounded-md" />
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-[250px]" />
@@ -75,10 +83,7 @@ export default function ProductsPage() {
               Manage your products and their pricing.
             </CardDescription>
           </div>
-          <Button size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
+          <AddProductDialog />
         </div>
       </CardHeader>
       <CardContent>
@@ -104,7 +109,7 @@ export default function ProductsPage() {
                       alt={product.name}
                       className="aspect-square rounded-md object-cover"
                       height="64"
-                      src={product.imageUrl}
+                      src={product.imageUrl || 'https://picsum.photos/seed/placeholder/64/64'}
                       width="64"
                     />
                   </TableCell>
