@@ -26,7 +26,7 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin@trackincome.com');
+  const [email, setEmail] = useState('sriramvenkat2304@gmail.com');
   const [password, setPassword] = useState('password');
 
   useEffect(() => {
