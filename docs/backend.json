@@ -1,0 +1,426 @@
+{
+  "entities": {
+    "ClientAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ClientAccount",
+      "type": "object",
+      "description": "Represents a client account within the LedgerSync application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the client account."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the client."
+        },
+        "adminId": {
+          "type": "string",
+          "description": "Reference to AdminUser. (Relationship: AdminUser 1:N ClientAccount)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the client account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "adminId",
+        "createdAt"
+      ]
+    },
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents an administrator user within the LedgerSync application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the admin user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the admin user.",
+          "format": "email"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full name of the admin user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the admin user was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "fullName",
+        "createdAt"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product that can be associated with client accounts.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the product."
+        },
+        "adminId": {
+          "type": "string",
+          "description": "Reference to AdminUser. (Relationship: AdminUser 1:N Product)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "adminId",
+        "createdAt"
+      ]
+    },
+    "ClientProductPrice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ClientProductPrice",
+      "type": "object",
+      "description": "Represents the price of a product for a specific client.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the client product price."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to ClientAccount. (Relationship: ClientAccount 1:N ClientProductPrice)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N ClientProductPrice)"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product for the client."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the client product price was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "productId",
+        "price",
+        "createdAt"
+      ]
+    },
+    "Bill": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bill",
+      "type": "object",
+      "description": "Represents a bill generated for a client.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the bill."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to ClientAccount. (Relationship: ClientAccount 1:N Bill)"
+        },
+        "billDate": {
+          "type": "string",
+          "description": "Date of the bill.",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the bill."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the bill was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "billDate",
+        "totalAmount",
+        "createdAt"
+      ]
+    },
+    "BillItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BillItem",
+      "type": "object",
+      "description": "Represents an item within a bill.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the bill item."
+        },
+        "billId": {
+          "type": "string",
+          "description": "Reference to Bill. (Relationship: Bill 1:N BillItem)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N BillItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product in the bill item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product in the bill item (can be adjusted at bill time)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the bill item was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "billId",
+        "productId",
+        "quantity",
+        "price",
+        "createdAt"
+      ]
+    },
+    "IncomeEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IncomeEntry",
+      "type": "object",
+      "description": "Represents an income entry.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the income entry."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to ClientAccount. (Relationship: ClientAccount 1:N IncomeEntry)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the income."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the income entry."
+        },
+        "entryDate": {
+          "type": "string",
+          "description": "Date of the income entry.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the income entry was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "amount",
+        "description",
+        "entryDate",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/admin_users/{adminId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Stores admin user profiles. Uses path-based ownership, where `adminId` is the Firebase Auth UID. No denormalization required at this level.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_users/{adminId}/client_accounts/{clientId}",
+        "definition": {
+          "entityName": "ClientAccount",
+          "schema": {
+            "$ref": "#/backend/entities/ClientAccount"
+          },
+          "description": "Stores client account information. Path-based ownership under `/admin_users/{adminId}`. Includes denormalized `adminId` for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier of the client account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_users/{adminId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product information. Path-based ownership under `/admin_users/{adminId}`. Includes denormalized `adminId` for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user."
+            },
+            {
+              "name": "productId",
+              "description": "The unique identifier of the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_users/{adminId}/client_accounts/{clientId}/client_product_prices/{clientProductPriceId}",
+        "definition": {
+          "entityName": "ClientProductPrice",
+          "schema": {
+            "$ref": "#/backend/entities/ClientProductPrice"
+          },
+          "description": "Stores the prices of products for specific clients.  Nested under client account for clear ownership. Includes denormalized `adminId` and `clientId` for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier of the client account."
+            },
+            {
+              "name": "clientProductPriceId",
+              "description": "The unique identifier of the client product price."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}",
+        "definition": {
+          "entityName": "Bill",
+          "schema": {
+            "$ref": "#/backend/entities/Bill"
+          },
+          "description": "Stores bill information for a specific client. Nested under client accounts. Includes denormalized `adminId` and `clientId` for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier of the client account."
+            },
+            {
+              "name": "billId",
+              "description": "The unique identifier of the bill."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}/bill_items/{billItemId}",
+        "definition": {
+          "entityName": "BillItem",
+          "schema": {
+            "$ref": "#/backend/entities/BillItem"
+          },
+          "description": "Stores individual items within a bill.  Nested under bills for clear ownership. Includes denormalized `adminId`, `clientId`, and `billId` for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier of the client account."
+            },
+            {
+              "name": "billId",
+              "description": "The unique identifier of the bill."
+            },
+            {
+              "name": "billItemId",
+              "description": "The unique identifier of the bill item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_users/{adminId}/client_accounts/{clientId}/income_entries/{incomeEntryId}",
+        "definition": {
+          "entityName": "IncomeEntry",
+          "schema": {
+            "$ref": "#/backend/entities/IncomeEntry"
+          },
+          "description": "Stores income entries for a specific client. Nested under client accounts. Includes denormalized `adminId` and `clientId` for authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of the administrator user."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier of the client account."
+            },
+            {
+              "name": "incomeEntryId",
+              "description": "The unique identifier of the income entry."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily maintainable database for the LedgerSync application. The core principle is to ensure authorization independence, eliminating the need for complex `get()` calls in security rules. This is achieved through denormalization, specifically copying relevant authorization data (adminId for ownership) into child collections. The structure also emphasizes clarity and predictability. All collections are segregated based on security needs (admin-owned vs client-owned data). Path-based ownership is used where possible to simplify security rules. \n\n*   **Authorization Independence:** The `adminId` is copied into the `ClientAccount`, `Product`. This allows security rules in these collections to validate ownership without needing to perform a `get()` request on the `/admin_users/{adminId}` document.\n\n*   **QAPs (Rules are not Filters):** The segregation of data based on ownership (admin user) and path-based ownership `/admin_users/{adminId}/client_accounts/{clientId}` allow for efficient and secure `list` operations, as the security rules can simply check if `request.auth.uid == adminId` to authorize listing client accounts for a specific admin. Similarly, products and clients are grouped under the admin user.\n\n*   The use of hierarchical paths such as `/admin_users/{adminId}/client_accounts/{clientId}/bills/{billId}` makes securing the data based on admin and client ownership simple and efficient."
+  }
+}
