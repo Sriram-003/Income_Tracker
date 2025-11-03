@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useActionState } from 'react';
 import { Wand2, Copy } from 'lucide-react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -60,7 +60,7 @@ export function ContentSuggestion({
     billAmount,
   });
 
-  const [state, formAction] = useFormState<ActionState, FormData>(
+  const [state, formAction] = useActionState<ActionState, FormData>(
     async (_prevState, formData) => {
       const result = await actionWithInput();
       if (result.data) {
