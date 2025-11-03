@@ -66,7 +66,7 @@ export default function DashboardLayout({
             </Button>
             <div className="flex flex-col">
               <h2 className="text-lg font-semibold text-sidebar-foreground">
-                LedgerSync
+                Track income
               </h2>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function DashboardLayout({
                       Admin
                     </p>
                     <p className="text-xs text-sidebar-foreground/70">
-                      admin@ledgersync.com
+                      admin@trackincome.com
                     </p>
                   </div>
                 </div>

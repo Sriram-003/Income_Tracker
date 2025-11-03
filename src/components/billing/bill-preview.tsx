@@ -46,7 +46,7 @@ export function BillPreview({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Icons.logo className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold">LedgerSync</h1>
+              <h1 className="text-2xl font-bold">Track income</h1>
             </div>
             <p className="text-muted-foreground">Invoice</p>
           </div>

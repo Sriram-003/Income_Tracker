@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'LedgerSync',
+  title: 'Track income',
   description: 'Manage your daily income and client accounts with ease.',
 };
 

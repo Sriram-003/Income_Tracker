@@ -31,7 +31,7 @@ export default function LoginPage() {
           <div className="mb-4 flex justify-center">
             <Icons.logo className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">LedgerSync</CardTitle>
+          <CardTitle className="text-2xl">Track income</CardTitle>
           <CardDescription>
             Welcome back! Please sign in to your account.
           </CardDescription>
@@ -44,7 +44,7 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 placeholder="admin@example.com"
-                defaultValue="admin@ledgersync.com"
+                defaultValue="admin@trackincome.com"
                 required
               />
             </div>
