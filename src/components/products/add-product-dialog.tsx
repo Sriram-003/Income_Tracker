@@ -131,7 +131,15 @@ export function AddProductDialog() {
             <FormField
               control={form.control}
               name="defaultPrice"
-              render={({ field }).tsx}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default Price</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField
