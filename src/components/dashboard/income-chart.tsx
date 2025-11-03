@@ -8,7 +8,22 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { monthlyIncomeChartData } from '@/lib/data';
+
+const monthlyIncomeChartData = [
+  { month: 'Jan', income: 1800 },
+  { month: 'Feb', income: 2200 },
+  { month: 'Mar', income: 2500 },
+  { month: 'Apr', income: 2100 },
+  { month: 'May', income: 3200 },
+  { month: 'Jun', income: 2900 },
+  { month: 'Jul', income: 3500 },
+  { month: 'Aug', income: 3100 },
+  { month: 'Sep', income: 2800 },
+  { month: 'Oct', income: 3300 },
+  { month: 'Nov', income: 3700 },
+  { month: 'Dec', income: 4100 },
+];
+
 
 export function IncomeChart() {
   return (
