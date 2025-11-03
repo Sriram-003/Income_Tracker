@@ -109,7 +109,7 @@ export default function DashboardLayout({
                       Admin
                     </p>
                     <p className="text-xs text-sidebar-foreground/70">
-                      admin@trackincome.com
+                      sriramvenkat2304@gmail.com
                     </p>
                   </div>
                 </div>

@@ -106,7 +106,7 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full">
-              Sign In or Create Account
+              Sign In 
             </Button>
           </CardFooter>
         </form>
