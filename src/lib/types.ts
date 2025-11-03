@@ -41,8 +41,11 @@ export type Bill = {
 
 export type IncomeEntry = {
   id: string;
+  clientId: string;
   amount: number;
   date: string;
-  clientName: string;
+  clientName?: string; // Optional, can be joined
   description: string;
+  entryDate: string;
+  createdAt: any;
 };

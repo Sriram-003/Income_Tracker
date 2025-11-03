@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileText, Home, Users, Package, Download, LogOut } from 'lucide-react';
+import {
+  FileText,
+  Home,
+  Users,
+  Package,
+  Download,
+  LogOut,
+  CreditCard,
+} from 'lucide-react';
 import type { ImagePlaceholder } from '@/lib/placeholder-images';
 import placeholderData from '@/lib/placeholder-images.json';
 
@@ -35,6 +43,7 @@ const menuItems = [
   { href: '/dashboard/accounts', label: 'Accounts', icon: Users },
   { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/billing', label: 'Billing', icon: FileText },
+  { href: '/dashboard/payments', label: 'Payments', icon: CreditCard },
   { href: '/dashboard/reports', label: 'Reports', icon: Download },
 ];
 
