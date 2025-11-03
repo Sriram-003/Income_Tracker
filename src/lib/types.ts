@@ -14,6 +14,13 @@ export type Product = {
   imageUrl?: string;
 };
 
+export type ClientProductPrice = {
+  id: string;
+  clientId: string;
+  productId: string;
+  price: number;
+}
+
 export type BillItem = {
   productId: string;
   productName: string; // Used for temp products

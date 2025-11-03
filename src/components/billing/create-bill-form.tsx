@@ -38,7 +38,7 @@ import {
   useUser,
   updateDocumentNonBlocking,
 } from '@/firebase';
-import type { Client, Product } from '@/lib/types';
+import type { Client, Product, ClientProductPrice } from '@/lib/types';
 import { PlusCircle, Trash2, FileText } from 'lucide-react';
 import { BillPreview } from './bill-preview';
 import { ContentSuggestion } from './content-suggestion';
@@ -95,6 +95,13 @@ export function CreateBillForm() {
   const watchClientId = form.watch('clientId');
   const watchItems = form.watch('items');
 
+  const clientPricesQuery = useMemoFirebase(() => {
+    if (!user || !watchClientId) return null;
+    return collection(firestore, `/admin_users/${user.uid}/client_accounts/${watchClientId}/client_product_prices`);
+  }, [firestore, user, watchClientId]);
+
+  const { data: clientPrices } = useCollection<ClientProductPrice>(clientPricesQuery);
+
   useEffect(() => {
     if (clients) {
       const client = clients.find((c) => c.id === watchClientId);
@@ -112,7 +119,15 @@ export function CreateBillForm() {
       if (product) {
         form.setValue(`items.${index}.isTemp`, false);
         form.setValue(`items.${index}.productName`, product.name);
-        form.setValue(`items.${index}.price`, product.defaultPrice);
+        
+        // Check for client-specific price first
+        const clientPrice = clientPrices?.find(cp => cp.productId === productId);
+        if (clientPrice) {
+          form.setValue(`items.${index}.price`, clientPrice.price);
+        } else {
+          // Fallback to default product price
+          form.setValue(`items.${index}.price`, product.defaultPrice);
+        }
       }
     }
   };
