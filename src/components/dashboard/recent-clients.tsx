@@ -81,11 +81,11 @@ export function RecentClients() {
                   <div
                     className={cn(
                       'ml-auto font-medium',
-                      client.balance < 0 ? 'text-destructive' : 'text-green-600',
+                      client.balance > 0 ? 'text-destructive' : 'text-green-600',
                       client.balance === 0 && 'text-muted-foreground'
                     )}
                   >
-                    {client.balance < 0 ? '-' : ''}$
+                    {client.balance > 0 ? '' : '-'}₹
                     {Math.abs(client.balance).toFixed(2)}
                   </div>
                 </div>

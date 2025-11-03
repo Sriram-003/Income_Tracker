@@ -31,7 +31,7 @@ import {
   useUser,
   useMemoFirebase,
 } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -122,12 +122,12 @@ export function AddProductDialog() {
         firestore,
         `/admin_users/${user.uid}/products`
       );
-      const productDocRef = await addDocumentNonBlocking(productsCollectionRef, {
+      const productDocRef = await addDoc(productsCollectionRef, {
         name: data.name,
         adminId: user.uid,
         createdAt: serverTimestamp(),
         imageUrl: imageUrl,
-        defaultPrice: 0,
+        defaultPrice: 0, // This can be a standard default or managed differently
       });
 
       if (productDocRef && data.clientPrices) {
@@ -136,7 +136,7 @@ export function AddProductDialog() {
           `admin_users/${user.uid}/client_product_prices`
         );
         for (const clientPrice of data.clientPrices) {
-           await addDocumentNonBlocking(clientProductPricesCollectionRef, {
+           await addDoc(clientProductPricesCollectionRef, {
             clientId: clientPrice.clientId,
             productId: productDocRef.id,
             price: clientPrice.price,

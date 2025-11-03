@@ -37,12 +37,12 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
-  addDocumentNonBlocking,
   useCollection,
   useFirestore,
   useMemoFirebase,
   useUser,
   updateDocumentNonBlocking,
+  addDocumentNonBlocking,
 } from '@/firebase';
 import type { Client } from '@/lib/types';
 import { CreditCard, CalendarIcon } from 'lucide-react';
@@ -114,7 +114,7 @@ export function PaymentForm() {
 
     const incomeCollectionRef = collection(
       firestore,
-      `admin_users/${user.uid}/client_accounts/${data.clientId}/income_entries`
+      `admin_users/${user.uid}/income_entries`
     );
 
     try {
@@ -133,7 +133,7 @@ export function PaymentForm() {
         title: 'Payment Recorded',
         description: `Payment for ${
           selectedClient.name
-        } recorded. New balance is $${newBalance.toFixed(2)}.`,
+        } recorded. New balance is ₹${newBalance.toFixed(2)}.`,
       });
       form.reset();
       setSelectedClient(null);
@@ -196,12 +196,12 @@ export function PaymentForm() {
                 <p
                   className={cn(
                     'text-2xl font-bold',
-                    selectedClient.balance < 0
+                    selectedClient.balance > 0
                       ? 'text-destructive'
                       : 'text-green-600'
                   )}
                 >
-                  {selectedClient.balance < 0 ? '-' : ''}$
+                  {selectedClient.balance > 0 ? '' : '-'}₹
                   {Math.abs(selectedClient.balance).toFixed(2)}
                 </p>
               </div>

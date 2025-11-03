@@ -1,0 +1,79 @@
+/**
+ * @fileOverview Firestore Security Rules for LedgerSync.
+ *
+ * Core Philosophy: This ruleset enforces a strict, path-based user-ownership model.
+ * All data is nested under `/admin_users/{adminId}`, ensuring that only the
+ * authenticated admin user can manage data within their designated tree.
+ *
+ * Data Structure:
+ * - `/admin_users/{adminId}`: Stores administrator user profiles.
+ * - `/admin_users/{adminId}/client_accounts/{clientId}`: Stores client account information for each admin.
+ * - `/admin_users/{adminId}/products/{productId}`: Stores product information managed by each admin.
+ * - `/admin_users/{adminId}/client_product_prices/{clientProductPriceId}`: Prices for products, specific to a client and admin.
+ * - `/admin_users/{adminId}/bills/{billId}`: Billing information for clients, managed by an admin.
+ * - `/admin_users/{adminId}/bills/{billId}/bill_items/{billItemId}`: Line items for each bill.
+ * - `/admin_users/{adminId}/income_entries/{incomeEntryId}`: Income entries related to a client.
+ *
+ * Key Security Decisions:
+ * - User listing is disabled to protect user privacy.
+ * - Strict ownership is enforced for all data modifications (create, update, delete).
+ * - Data validation is minimized to facilitate rapid prototyping, focusing solely on
+ *   authorization-critical fields (e.g., `adminId`).
+ *
+ * Denormalization for Authorization: The `adminId` is denormalized into
+ * relevant documents to avoid costly `get()` calls in security rules. This enables
+ * efficient and scalable authorization checks based solely on the document data
+ * and the authenticated user's ID.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    match /admin_users/{adminId} {
+      allow read, create, update: if isOwner(adminId);
+      allow delete: if false; // Prevent accidental deletion
+      allow list: if false; // Prevent listing all users
+
+      match /client_accounts/{clientId} {
+        allow read, list, create, update, delete: if isOwner(adminId);
+      }
+
+      match /products/{productId} {
+        allow read, list, create, update, delete: if isOwner(adminId);
+      }
+      
+      match /client_product_prices/{priceId} {
+          allow read, list, create, update, delete: if isOwner(adminId);
+      }
+
+      match /bills/{billId} {
+        allow read, list, create, update, delete: if isOwner(adminId);
+        
+        match /bill_items/{itemId} {
+            allow read, list, create, update, delete: if isOwner(adminId);
+        }
+      }
+      
+      match /income_entries/{entryId} {
+          allow read, list, create, update, delete: if isOwner(adminId);
+      }
+      
+      // Legacy paths for backwards compatibility during transition
+      // These should be removed after data migration.
+      match /client_accounts/{clientId}/bills/{billId} {
+         allow read, list, create, update, delete: if isOwner(adminId);
+         match /bill_items/{itemId} {
+              allow read, list, create, update, delete: if isOwner(adminId);
+         }
+      }
+       match /client_accounts/{clientId}/income_entries/{entryId} {
+          allow read, list, create, update, delete: if isOwner(adminId);
+      }
+
+    }
+  }
+}

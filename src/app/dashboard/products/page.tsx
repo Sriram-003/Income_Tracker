@@ -25,14 +25,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import type { Product, ClientProductPrice } from '@/lib/types';
+import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
+import type { Product, ClientProductPrice, Client } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddProductDialog } from '@/components/products/add-product-dialog';
 import { useState } from 'react';
 import { EditProductDialog } from '@/components/products/edit-product-dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 function ProductPrices({ productId }: { productId: string }) {
   const firestore = useFirestore();
@@ -55,7 +66,7 @@ function ProductPrices({ productId }: { productId: string }) {
     return collection(firestore, `admin_users/${user.uid}/client_accounts`);
   }, [firestore, user]);
 
-  const { data: clients, isLoading: clientsLoading } = useCollection(clientsQuery);
+  const { data: clients, isLoading: clientsLoading } = useCollection<Client>(clientsQuery);
 
   if (isLoading || clientsLoading) {
     return (
@@ -76,7 +87,7 @@ function ProductPrices({ productId }: { productId: string }) {
         const client = clients?.find((c) => c.id === price.clientId);
         return (
           <Badge key={price.id} variant="secondary">
-            {client?.name || 'Unknown'}: ${price.price.toFixed(2)}
+            {client?.name || 'Unknown'}: ₹{price.price.toFixed(2)}
           </Badge>
         );
       })}
@@ -87,7 +98,9 @@ function ProductPrices({ productId }: { productId: string }) {
 export default function ProductsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const { toast } = useToast();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   const productsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -95,6 +108,19 @@ export default function ProductsPage() {
   }, [firestore, user]);
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
+
+  const handleDelete = () => {
+    if (!user || !deletingProduct) return;
+    
+    const productRef = doc(firestore, `/admin_users/${user.uid}/products`, deletingProduct.id);
+    deleteDocumentNonBlocking(productRef);
+
+    toast({
+      title: 'Product Deleted',
+      description: `${deletingProduct.name} has been deleted.`,
+    });
+    setDeletingProduct(null);
+  }
 
   if (isLoading) {
     return (
@@ -194,7 +220,10 @@ export default function ProductsPage() {
                           >
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem
+                            className="text-destructive"
+                             onClick={() => setDeletingProduct(product)}
+                          >
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -213,6 +242,21 @@ export default function ProductsPage() {
           onOpenChange={(isOpen) => !isOpen && setEditingProduct(null)}
         />
       )}
+      <AlertDialog open={!!deletingProduct} onOpenChange={(isOpen) => !isOpen && setDeletingProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              "{deletingProduct?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -43,9 +43,7 @@ export type IncomeEntry = {
   id: string;
   clientId: string;
   amount: number;
-  date: string;
-  clientName?: string; // Optional, can be joined
   description: string;
-  entryDate: string;
+  entryDate: string; // Should be ISO string
   createdAt: any;
 };

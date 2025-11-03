@@ -48,8 +48,7 @@ export function BillPreview({
               <Icons.logo className="h-8 w-8 text-primary" />
               <h1 className="text-2xl font-bold">Track income</h1>
             </div>
-            <p className="text-muted-foreground">Invoice</p>
-          </div>
+            <p className="text-muted-foreground">Invoice</p>          </div>
           <div className="text-right">
             <p className="font-semibold">{client.name}</p>
             <p className="text-sm text-muted-foreground">{client.email}</p>
@@ -74,10 +73,10 @@ export function BillPreview({
                   <TableCell className="font-medium">{item.isTemp ? item.productName : product?.name}</TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-right">
-                    ${item.price.toFixed(2)}
+                    ₹{item.price.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
-                    ${(item.quantity * item.price).toFixed(2)}
+                    ₹{(item.quantity * item.price).toFixed(2)}
                   </TableCell>
                 </TableRow>
               );
@@ -91,17 +90,17 @@ export function BillPreview({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Previous Balance:</span>
               <span className="font-medium">
-                ${client.balance.toFixed(2)}
+                ₹{client.balance.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">This Bill:</span>
-              <span className="font-medium">${billTotal.toFixed(2)}</span>
+              <span className="font-medium">₹{billTotal.toFixed(2)}</span>
             </div>
             <Separator />
             <div className="flex justify-between text-lg font-bold">
               <span>New Balance Due:</span>
-              <span>${newBalance.toFixed(2)}</span>
+              <span>₹{newBalance.toFixed(2)}</span>
             </div>
           </div>
         </div>

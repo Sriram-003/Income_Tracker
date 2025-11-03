@@ -1,5 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { DollarSign, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
+import type { Client, IncomeEntry } from '@/lib/types';
+import { Skeleton } from '../ui/skeleton';
+import { useMemo } from 'react';
 
 type OverviewCardProps = {
   title: string;
@@ -7,6 +19,7 @@ type OverviewCardProps = {
   icon: React.ElementType;
   change?: string;
   changeType?: 'increase' | 'decrease';
+  isLoading?: boolean;
 };
 
 function OverviewCard({
@@ -15,7 +28,22 @@ function OverviewCard({
   icon: Icon,
   change,
   changeType,
+  isLoading,
 }: OverviewCardProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="mt-1 h-4 w-1/2" />
+        </CardContent>
+      </Card>
+    );
+  }
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -40,30 +68,79 @@ function OverviewCard({
 }
 
 export function OverviewCards() {
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const clientsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `/admin_users/${user.uid}/client_accounts`);
+  }, [firestore, user]);
+
+  const { data: clients, isLoading: clientsLoading } = useCollection<Client>(clientsQuery);
+  
+  const incomeEntriesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Note: This queries ALL income entries and filters on the client.
+    // For large datasets, this should be optimized.
+    return collection(firestore, `admin_users/${user.uid}/income_entries`);
+  }, [firestore, user]);
+  
+  const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeEntriesQuery);
+
+  const { totalIncomeThisMonth, outstandingBalance, totalClients } = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    
+    const totalIncomeThisMonth = incomeEntries
+      ?.filter(entry => new Date(entry.entryDate).getTime() >= startOfMonth)
+      .reduce((acc, entry) => acc + entry.amount, 0) || 0;
+
+    const outstandingBalance = clients
+      ?.filter(client => client.balance > 0)
+      .reduce((acc, client) => acc + client.balance, 0) || 0;
+
+    const totalClients = clients?.length || 0;
+    
+    return { totalIncomeThisMonth, outstandingBalance, totalClients };
+  }, [incomeEntries, clients]);
+
+  const isLoading = clientsLoading || incomeLoading;
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <OverviewCard
         title="Total Income (This Month)"
-        value="$3,200.00"
+        value={`₹${totalIncomeThisMonth.toFixed(2)}`}
         icon={DollarSign}
-        change="+20.1%"
-        changeType="increase"
+        isLoading={isLoading}
+        // change="+20.1%"
+        // changeType="increase"
       />
       <OverviewCard
         title="Outstanding Balance"
-        value="$455.25"
+        value={`₹${outstandingBalance.toFixed(2)}`}
         icon={DollarSign}
-        change="-2.5%"
-        changeType="decrease"
+        isLoading={isLoading}
+        // change="-2.5%"
+        // changeType="decrease"
       />
       <OverviewCard
-        title="New Clients (This Month)"
-        value="+2"
+        title="Total Active Clients"
+        value={totalClients.toString()}
         icon={Users}
-        change="+5.5%"
-        changeType="increase"
+        isLoading={isLoading}
       />
-      <OverviewCard title="Total Active Clients" value="5" icon={Users} />
+       <OverviewCard
+        title="New Clients (This Month)"
+        value="+0"
+        icon={Users}
+        isLoading={isLoading}
+        // change="+5.5%"
+        // changeType="increase"
+      />
     </div>
   );
 }

@@ -24,15 +24,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-  addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
   useCollection,
   useFirestore,
   useUser,
   useMemoFirebase,
+  addDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, where, serverTimestamp, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -144,7 +144,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
       // Prices to add
       const pricesToAdd = incomingPrices.filter(p => !p.id);
       for (const price of pricesToAdd) {
-        await addDocumentNonBlocking(pricesCollectionRef, {
+        await addDoc(pricesCollectionRef, {
           ...price,
           productId: product.id,
           adminId: user.uid,
@@ -153,15 +153,17 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
       }
 
       // Prices to update
-      const pricesToUpdate = incomingPrices.filter(p => p.id && existingPrices.some(e => e.id === p.id && e.price !== p.price));
+      const pricesToUpdate = incomingPrices.filter(p => p.id && existingPrices.some(e => e.id === p.id && (e.price !== p.price || e.clientId !== p.clientId)));
       for (const price of pricesToUpdate) {
+        if (!price.id) continue;
         const priceRef = doc(pricesCollectionRef, price.id);
-        await updateDocumentNonBlocking(priceRef, { price: price.price });
+        await updateDocumentNonBlocking(priceRef, { price: price.price, clientId: price.clientId });
       }
       
       // Prices to delete
       const pricesToDelete = existingPrices.filter(e => !incomingPrices.some(p => p.id === e.id));
       for (const price of pricesToDelete) {
+        if (!price.id) continue;
         const priceRef = doc(pricesCollectionRef, price.id);
         await deleteDocumentNonBlocking(priceRef);
       }
@@ -170,6 +172,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
       toast({ title: 'Product Updated', description: `${data.name} has been updated.` });
       onOpenChange(false);
     } catch (error) {
+      console.error(error);
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update product.' });
     } finally {
       setIsSubmitting(false);

@@ -31,7 +31,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-  addDocumentNonBlocking,
   useCollection,
   useFirestore,
   useMemoFirebase,
@@ -126,11 +125,7 @@ export function CreateBillForm() {
         form.setValue(`items.${index}.productName`, product.name);
         
         const clientPrice = clientPrices?.find(cp => cp.productId === productId);
-        if (clientPrice) {
-          form.setValue(`items.${index}.price`, clientPrice.price);
-        } else {
-          form.setValue(`items.${index}.price`, product.defaultPrice || 0);
-        }
+        form.setValue(`items.${index}.price`, clientPrice?.price ?? product.defaultPrice ?? 0);
       }
     }
   };
@@ -178,9 +173,12 @@ export function CreateBillForm() {
       );
       
       const itemPromises = billDetails.items.map((item) => {
+        const productData = products?.find(p => p.id === item.productId);
+        const productName = item.isTemp ? item.productName : productData?.name;
+        
         return addDoc(billItemsCollectionRef, {
-          productId: item.isTemp ? billId + '-' + Date.now() : item.productId,
-          productName: item.productName,
+          productId: item.isTemp ? 'temp_' + Date.now() : item.productId,
+          productName: productName,
           quantity: item.quantity,
           price: item.price,
           billId: billId,
@@ -237,7 +235,7 @@ export function CreateBillForm() {
         <div className="flex justify-between items-center">
           <Button variant="outline" onClick={createNewBill}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Form
+            Create New Bill
           </Button>
            <Button onClick={handleConfirmAndSave} disabled={isSaving}>
             {isSaving ? 'Saving...' : 'Confirm & Save Bill'}
@@ -312,7 +310,7 @@ export function CreateBillForm() {
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className="grid grid-cols-12 gap-2 items-start"
+                    className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start"
                   >
                     <div className="col-span-12 sm:col-span-4">
                        <Controller
@@ -374,11 +372,11 @@ export function CreateBillForm() {
                         readOnly
                         value={
                           watchItems[index]
-                            ? (
+                            ? `₹${(
                                 (watchItems[index]?.quantity || 0) *
                                 (watchItems[index]?.price || 0)
-                              ).toFixed(2)
-                            : '0.00'
+                              ).toFixed(2)}`
+                            : '₹0.00'
                         }
                         placeholder="Total"
                         className="bg-muted"
@@ -398,9 +396,9 @@ export function CreateBillForm() {
                   </div>
                 ))}
               </div>
-              {form.formState.errors.items?.message && (
+              {form.formState.errors.items?.root?.message && (
                 <p className="text-sm font-medium text-destructive mt-2">
-                  {form.formState.errors.items.message}
+                  {form.formState.errors.items.root.message}
                 </p>
               )}
             </div>
@@ -425,5 +423,3 @@ export function CreateBillForm() {
     </Card>
   );
 }
-
-    
