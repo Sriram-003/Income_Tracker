@@ -31,7 +31,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const productFormSchema = z.object({
   name: z.string().min(2, 'Product name must be at least 2 characters.'),
-  image: z.instanceof(FileList).optional(),
+  image: z.any().optional(),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
