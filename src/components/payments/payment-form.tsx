@@ -64,6 +64,7 @@ type PaymentFormData = z.infer<typeof paymentFormSchema>;
 
 export function PaymentForm() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [lastPaymentInfo, setLastPaymentInfo] = useState<{name: string, newBalance: number} | null>(null);
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -90,6 +91,7 @@ export function PaymentForm() {
     if (clients) {
       const client = clients.find((c) => c.id === watchClientId);
       setSelectedClient(client || null);
+      setLastPaymentInfo(null); // Clear last payment info when client changes
     }
   }, [watchClientId, clients]);
 
@@ -135,6 +137,8 @@ export function PaymentForm() {
           selectedClient.name
         } recorded. New balance is ₹${newBalance.toFixed(2)}.`,
       });
+
+      setLastPaymentInfo({ name: selectedClient.name, newBalance: newBalance });
       form.reset();
       setSelectedClient(null);
     } catch (error) {
@@ -203,6 +207,17 @@ export function PaymentForm() {
                 >
                   {selectedClient.balance > 0 ? '' : '-'}₹
                   {Math.abs(selectedClient.balance).toFixed(2)}
+                </p>
+              </div>
+            )}
+            
+            {lastPaymentInfo && (
+              <div className="rounded-md border border-green-500 bg-green-50 p-4 dark:bg-green-900/20">
+                <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                  Payment Successful!
+                </p>
+                <p className="text-lg font-bold text-green-900 dark:text-green-200">
+                  {lastPaymentInfo.name}'s New Balance: ₹{lastPaymentInfo.newBalance.toFixed(2)}
                 </p>
               </div>
             )}

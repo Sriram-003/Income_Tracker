@@ -223,6 +223,10 @@ export function CreateBillForm() {
     });
   };
 
+  const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    event.target.select();
+  };
+
   if (billDetails && selectedClient && products) {
     const billTotal = billDetails.items.reduce(
       (acc, item) => acc + item.quantity * item.price,
@@ -310,7 +314,7 @@ export function CreateBillForm() {
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start"
+                    className="grid grid-cols-12 gap-2 items-start"
                   >
                     <div className="col-span-12 sm:col-span-4">
                        <Controller
@@ -351,22 +355,24 @@ export function CreateBillForm() {
                         />
                       </div>
                     )}
-                    <div className="col-span-4 sm:col-span-2">
+                    <div className="col-span-3 sm:col-span-2">
                       <Input
                         type="number"
                         placeholder="Qty"
                         {...form.register(`items.${index}.quantity`)}
+                        onFocus={handleFocus}
                       />
                     </div>
-                    <div className="col-span-4 sm:col-span-2">
+                    <div className="col-span-3 sm:col-span-2">
                       <Input
                         type="number"
                         step="0.01"
                         placeholder="Price"
                         {...form.register(`items.${index}.price`)}
+                         onFocus={handleFocus}
                       />
                     </div>
-                    <div className="col-span-4 sm:col-span-2">
+                    <div className="col-span-4 sm:col-span-3">
                       <Input
                         type="text"
                         readOnly
@@ -382,7 +388,7 @@ export function CreateBillForm() {
                         className="bg-muted"
                       />
                     </div>
-                    <div className="col-span-12 sm:col-span-1 flex justify-end">
+                    <div className="col-span-2 sm:col-span-1 flex justify-end">
                       <Button
                         type="button"
                         variant="destructive"

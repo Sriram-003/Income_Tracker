@@ -189,7 +189,7 @@ export function AddProductDialog() {
                 <FormItem>
                   <FormLabel>Product Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Organic Apples" {...field} />
+                    <Input placeholder="Product name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
