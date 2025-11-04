@@ -51,15 +51,8 @@ export function IncomeChart() {
       income: 0,
     }));
     
-    if (incomeEntries) {
-        incomeEntries.forEach(entry => {
-            const monthIndex = new Date(entry.entryDate).getMonth();
-            months[monthIndex].income += entry.amount;
-        });
-    }
-
     return months;
-  }, [incomeEntries]);
+  }, []);
 
   const isLoading = clientsLoading || incomeLoading;
 
