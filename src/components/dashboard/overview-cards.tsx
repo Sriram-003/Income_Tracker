@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { IndianRupee, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Client, IncomeEntry } from '@/lib/types';
@@ -114,7 +114,7 @@ export function OverviewCards() {
       <OverviewCard
         title="Total Income (This Month)"
         value={`₹${totalIncomeThisMonth.toFixed(2)}`}
-        icon={DollarSign}
+        icon={IndianRupee}
         isLoading={isLoading}
         // change="+20.1%"
         // changeType="increase"
@@ -122,7 +122,7 @@ export function OverviewCards() {
       <OverviewCard
         title="Outstanding Balance"
         value={`₹${outstandingBalance.toFixed(2)}`}
-        icon={DollarSign}
+        icon={IndianRupee}
         isLoading={isLoading}
         // change="-2.5%"
         // changeType="decrease"

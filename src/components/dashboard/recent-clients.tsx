@@ -74,9 +74,7 @@ export function RecentClients() {
                     <p className="text-sm font-medium leading-none">
                       {client.name}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {client.email}
-                    </p>
+              
                   </div>
                   <div
                     className={cn(
