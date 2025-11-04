@@ -91,12 +91,7 @@ export function OverviewCards() {
   const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeEntriesQuery);
 
   const { totalIncomeThisMonth, outstandingBalance, totalClients } = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    
-    const totalIncomeThisMonth = incomeEntries
-      ?.filter(entry => new Date(entry.entryDate).getTime() >= startOfMonth)
-      .reduce((acc, entry) => acc + entry.amount, 0) || 0;
+    const totalIncomeThisMonth = 0;
 
     const outstandingBalance = clients
       ?.filter(client => client.balance > 0)
