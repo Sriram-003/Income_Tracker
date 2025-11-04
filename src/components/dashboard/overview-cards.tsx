@@ -100,7 +100,7 @@ export function OverviewCards() {
     const totalClients = clients?.length || 0;
     
     return { totalIncomeThisMonth, outstandingBalance, totalClients };
-  }, [incomeEntries, clients]);
+  }, [clients]);
 
   const isLoading = clientsLoading || incomeLoading;
 
