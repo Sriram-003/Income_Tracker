@@ -25,6 +25,7 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
@@ -46,6 +47,12 @@ const menuItems = [
   { href: '/dashboard/payments', label: 'Payments', icon: CreditCard },
   { href: '/dashboard/reports', label: 'Reports', icon: Download },
 ];
+
+function MobileNavHandler({ children }: { children: React.ReactNode }) {
+  const { setOpenMobile } = useSidebar();
+  return <div onClick={() => setOpenMobile(false)}>{children}</div>;
+}
+
 
 export default function DashboardLayout({
   children,
@@ -84,16 +91,18 @@ export default function DashboardLayout({
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={{ children: item.label }}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                <MobileNavHandler>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    tooltip={{ children: item.label }}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </MobileNavHandler>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
@@ -139,8 +148,9 @@ export default function DashboardLayout({
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <SidebarTrigger className="flex md:hidden" />
-          <div className="flex-1">
+          <SidebarTrigger className="flex md:hidden h-9 w-9" />
+           <div className="flex-1">
+             <h1 className="text-lg font-semibold md:hidden">Track income</h1>
             <h1 className="hidden text-lg font-semibold md:block">
               {menuItems.find((item) => pathname.startsWith(item.href))?.label ||
                 'Dashboard'}
