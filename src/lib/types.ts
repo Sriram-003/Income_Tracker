@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export type Client = {
   id: string;
   name: string;
@@ -30,11 +32,11 @@ export type BillItem = {
 };
 
 export type Bill = {
-  id: string;
+  id:string;
   clientId: string;
   items: BillItem[];
   totalAmount: number;
-  date: string;
+  createdAt: Timestamp;
   previousBalance: number;
   newBalance: number;
 };
