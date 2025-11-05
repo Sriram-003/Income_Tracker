@@ -80,7 +80,8 @@ export function OverviewCards() {
   
   const incomeEntriesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, `admin_users/${user.uid}/income_entries`);
+    // Point to a non-existent collection to simulate empty data
+    return collection(firestore, `admin_users/${user.uid}/no_income_entries`);
   }, [firestore, user]);
   
   const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeEntriesQuery);
