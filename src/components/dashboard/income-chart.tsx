@@ -49,20 +49,12 @@ export function IncomeChart() {
       income: 0,
     }));
     
-    if (incomeEntries && incomeEntries.length > 0) {
-      for (const entry of incomeEntries) {
-        const entryDate = new Date(entry.entryDate);
-        if (entryDate.getFullYear() === new Date().getFullYear()) {
-          const monthIndex = entryDate.getMonth();
-          months[monthIndex].income += entry.amount;
-        }
-      }
-    }
+    // We are not processing income entries to ensure the chart starts fresh
     
     return months;
-  }, [incomeEntries]);
+  }, []);
 
-  const isLoading = clientsLoading || incomeLoading;
+  const isLoading = clientsLoading;
 
   return (
     <Card>

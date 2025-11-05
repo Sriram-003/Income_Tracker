@@ -79,8 +79,7 @@ export function RecentClients() {
                   <div
                     className={cn(
                       'ml-auto font-medium',
-                      0 > 0 ? 'text-destructive' : 'text-green-600',
-                      0 === 0 && 'text-muted-foreground'
+                      'text-muted-foreground'
                     )}
                   >
                     ₹0.00

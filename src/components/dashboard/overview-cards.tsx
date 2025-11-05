@@ -88,17 +88,11 @@ export function OverviewCards() {
   const { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth } = useMemo(() => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Returning 0 for a fresh start
+    const totalIncomeThisMonth = 0;
 
-    const totalIncomeThisMonth =
-      incomeEntries
-        ?.filter(entry => {
-          if (!entry.entryDate) return false;
-          const entryDate = new Date(entry.entryDate);
-          return entryDate >= startOfMonth;
-        })
-        .reduce((sum, entry) => sum + entry.amount, 0) || 0;
-
-    const outstandingBalance = 0; // Reset to zero
+    const outstandingBalance = 0;
 
     const totalClients = clients?.length || 0;
 
@@ -111,9 +105,9 @@ export function OverviewCards() {
       .length || 0;
     
     return { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth };
-  }, [clients, incomeEntries]);
+  }, [clients]);
 
-  const isLoading = clientsLoading || incomeLoading;
+  const isLoading = clientsLoading;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

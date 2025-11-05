@@ -57,49 +57,6 @@ export default function ReportsPage() {
   const generateReportData = async () => {
     if (!user || !clients) return;
     setIsGenerating(true);
-    setReportData(null);
-
-    const tenDaysAgo = subDays(new Date(), 10);
-    const tenDaysAgoTimestamp = Timestamp.fromDate(tenDaysAgo);
-
-    const incomeQuery = query(
-      collection(firestore, `admin_users/${user.uid}/income_entries`),
-      where('entryDate', '>=', tenDaysAgo.toISOString())
-    );
-    const incomeSnapshots = await getDocs(incomeQuery);
-    const incomeEntries: ReportItem[] = incomeSnapshots.docs.map((d) => {
-      const data = d.data() as IncomeEntry;
-      return {
-        type: 'Income',
-        date: new Date(data.entryDate),
-        clientName: clients.find((c) => c.id === data.clientId)?.name || 'N/A',
-        description: data.description,
-        amount: data.amount,
-      };
-    });
-    
-    let bills: ReportItem[] = [];
-    for (const client of clients) {
-        const billsQuery = query(
-            collection(firestore, `/admin_users/${user.uid}/client_accounts/${client.id}/bills`),
-            where('createdAt', '>=', tenDaysAgoTimestamp)
-        );
-        const billsSnapshots = await getDocs(billsQuery);
-        billsSnapshots.forEach((doc) => {
-            const data = doc.data() as Bill;
-            bills.push({
-                type: 'Bill',
-                date: data.createdAt.toDate(),
-                clientName: client.name,
-                description: `Bill #${doc.id.substring(0, 6)}...`,
-                amount: data.totalAmount,
-            });
-        });
-    }
-
-    const combinedData = [...incomeEntries, ...bills].sort(
-      (a, b) => b.date.getTime() - a.date.getTime()
-    );
     
     // For a fresh start, we'll return an empty array
     setReportData([]);

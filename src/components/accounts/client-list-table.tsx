@@ -142,23 +142,14 @@ export function ClientListTable() {
                 <TableCell
                   className={cn(
                     'font-medium',
-                    0 > 0 ? 'text-destructive' : 'text-green-600',
-                    0 === 0 && 'text-muted-foreground'
+                    0 > 0 ? 'text-destructive' : 'text-muted-foreground',
                   )}
                 >
-                  {0 > 0 ? '' : '-'}₹
-                  {Math.abs(0).toFixed(2)}
+                  ₹0.00
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <Badge
-                    variant={0 > 0 ? 'destructive' : 'secondary'}
-                    className={cn(
-                      0 < 0 &&
-                        'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-                      0 === 0 && 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    {0 > 0 ? 'Owing' : 'In Credit'}
+                   <Badge variant={'outline'}>
+                    No Balance
                   </Badge>
                 </TableCell>
                 <TableCell>
