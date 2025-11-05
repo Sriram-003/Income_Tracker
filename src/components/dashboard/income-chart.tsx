@@ -75,7 +75,7 @@ export function IncomeChart() {
             An overview of your income for the current year.
           </CardDescription>
         </div>
-        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+        <Select value={selectedClientId} onValueChange={setSelectedClientId} disabled={isLoading}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Select Client" />
           </SelectTrigger>

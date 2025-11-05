@@ -101,6 +101,7 @@ export function OverviewCards() {
 
     const newClientsThisMonth = clients
       ?.filter(client => {
+          if (!client.createdAt) return false;
           const createdAt = client.createdAt instanceof Timestamp ? client.createdAt.toDate() : new Date(client.createdAt);
           return createdAt >= startOfMonth;
       })
