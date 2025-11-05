@@ -80,27 +80,34 @@ export function OverviewCards() {
   
   const incomeEntriesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    // Note: This queries ALL income entries and filters on the client.
-    // For large datasets, this should be optimized.
     return collection(firestore, `admin_users/${user.uid}/income_entries`);
   }, [firestore, user]);
   
   const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeEntriesQuery);
 
-  const { totalIncomeThisMonth, outstandingBalance, totalClients } = useMemo(() => {
-    const totalIncomeThisMonth = 0;
+  const { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth } = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const totalIncomeThisMonth = incomeEntries
+      ?.filter(entry => new Date(entry.entryDate) >= startOfMonth)
+      .reduce((acc, entry) => acc + entry.amount, 0) || 0;
 
     const outstandingBalance = clients
       ?.filter(client => client.balance > 0)
       .reduce((acc, client) => acc + client.balance, 0) || 0;
 
     const totalClients = clients?.length || 0;
+
+    const newClientsThisMonth = clients
+      ?.filter(client => {
+          const createdAt = client.createdAt instanceof Timestamp ? client.createdAt.toDate() : new Date(client.createdAt);
+          return createdAt >= startOfMonth;
+      })
+      .length || 0;
     
-    return { totalIncomeThisMonth, outstandingBalance, totalClients };
-  }, [clients]);
+    return { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth };
+  }, [clients, incomeEntries]);
 
   const isLoading = clientsLoading || incomeLoading;
 
@@ -111,16 +118,12 @@ export function OverviewCards() {
         value={`₹${totalIncomeThisMonth.toFixed(2)}`}
         icon={IndianRupee}
         isLoading={isLoading}
-        // change="+20.1%"
-        // changeType="increase"
       />
       <OverviewCard
         title="Outstanding Balance"
         value={`₹${outstandingBalance.toFixed(2)}`}
         icon={IndianRupee}
         isLoading={isLoading}
-        // change="-2.5%"
-        // changeType="decrease"
       />
       <OverviewCard
         title="Total Active Clients"
@@ -130,11 +133,9 @@ export function OverviewCards() {
       />
        <OverviewCard
         title="New Clients (This Month)"
-        value="+0"
+        value={`+${newClientsThisMonth}`}
         icon={Users}
         isLoading={isLoading}
-        // change="+5.5%"
-        // changeType="increase"
       />
     </div>
   );

@@ -34,7 +34,6 @@ export function IncomeChart() {
   
   const incomeQuery = useMemoFirebase(() => {
     if (!user) return null;
-    // This query is now just for show and won't be used to populate the chart
     if (selectedClientId === 'all') {
       return collection(firestore, `admin_users/${user.uid}/income_entries`);
     }
@@ -44,7 +43,7 @@ export function IncomeChart() {
     );
   }, [firestore, user, selectedClientId]);
 
-  const { isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeQuery);
+  const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeQuery);
 
   const chartData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({
@@ -52,8 +51,18 @@ export function IncomeChart() {
       income: 0,
     }));
     
+    if (incomeEntries) {
+      for (const entry of incomeEntries) {
+        const entryDate = new Date(entry.entryDate);
+        if (entryDate.getFullYear() === new Date().getFullYear()) {
+          const monthIndex = entryDate.getMonth();
+          months[monthIndex].income += entry.amount;
+        }
+      }
+    }
+    
     return months;
-  }, []);
+  }, [incomeEntries]);
 
   const isLoading = clientsLoading || incomeLoading;
 

@@ -6,6 +6,7 @@ export type Client = {
   email: string;
   avatarUrl: string;
   balance: number;
+  createdAt: any;
 };
 
 export type Product = {
