@@ -80,7 +80,8 @@ export function OverviewCards() {
   
   const incomeEntriesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, `admin_users/${user.uid}/income_entries`);
+    // Returning a query for a non-existent path to ensure no data is fetched
+    return collection(firestore, `admin_users/${user.uid}/no_income_entries`);
   }, [firestore, user]);
   
   const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeEntriesQuery);
@@ -89,13 +90,8 @@ export function OverviewCards() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const totalIncomeThisMonth = incomeEntries
-      ?.filter(entry => new Date(entry.entryDate) >= startOfMonth)
-      .reduce((acc, entry) => acc + entry.amount, 0) || 0;
-
-    const outstandingBalance = clients
-      ?.filter(client => client.balance > 0)
-      .reduce((acc, client) => acc + client.balance, 0) || 0;
+    const totalIncomeThisMonth = 0;
+    const outstandingBalance = 0;
 
     const totalClients = clients?.length || 0;
 
@@ -108,7 +104,7 @@ export function OverviewCards() {
       .length || 0;
     
     return { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth };
-  }, [clients, incomeEntries]);
+  }, [clients]);
 
   const isLoading = clientsLoading || incomeLoading;
 

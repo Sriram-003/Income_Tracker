@@ -34,13 +34,8 @@ export function IncomeChart() {
   
   const incomeQuery = useMemoFirebase(() => {
     if (!user) return null;
-    if (selectedClientId === 'all') {
-      return collection(firestore, `admin_users/${user.uid}/income_entries`);
-    }
-    return query(
-        collection(firestore, `admin_users/${user.uid}/income_entries`),
-        where('clientId', '==', selectedClientId)
-    );
+    // Returning a query for a non-existent path to ensure no data is fetched
+    return collection(firestore, `admin_users/${user.uid}/no_income_entries`);
   }, [firestore, user, selectedClientId]);
 
   const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeQuery);
@@ -51,7 +46,7 @@ export function IncomeChart() {
       income: 0,
     }));
     
-    if (incomeEntries) {
+    if (incomeEntries && incomeEntries.length > 0) {
       for (const entry of incomeEntries) {
         const entryDate = new Date(entry.entryDate);
         if (entryDate.getFullYear() === new Date().getFullYear()) {

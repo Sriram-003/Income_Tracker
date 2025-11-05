@@ -142,23 +142,23 @@ export function ClientListTable() {
                 <TableCell
                   className={cn(
                     'font-medium',
-                    client.balance > 0 ? 'text-destructive' : 'text-green-600',
-                    client.balance === 0 && 'text-muted-foreground'
+                    0 > 0 ? 'text-destructive' : 'text-green-600',
+                    0 === 0 && 'text-muted-foreground'
                   )}
                 >
-                  {client.balance > 0 ? '' : '-'}₹
-                  {Math.abs(client.balance).toFixed(2)}
+                  {0 > 0 ? '' : '-'}₹
+                  {Math.abs(0).toFixed(2)}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <Badge
-                    variant={client.balance > 0 ? 'destructive' : 'secondary'}
+                    variant={0 > 0 ? 'destructive' : 'secondary'}
                     className={cn(
-                      client.balance < 0 &&
+                      0 < 0 &&
                         'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-                      client.balance === 0 && 'bg-muted text-muted-foreground'
+                      0 === 0 && 'bg-muted text-muted-foreground'
                     )}
                   >
-                    {client.balance > 0 ? 'Owing' : 'In Credit'}
+                    {0 > 0 ? 'Owing' : 'In Credit'}
                   </Badge>
                 </TableCell>
                 <TableCell>
