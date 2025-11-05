@@ -49,12 +49,20 @@ export function IncomeChart() {
       income: 0,
     }));
     
-    // We are not processing income entries to ensure the chart starts fresh
+    if (incomeEntries) {
+      for (const entry of incomeEntries) {
+        const entryDate = new Date(entry.entryDate);
+        const monthIndex = entryDate.getMonth();
+        if (months[monthIndex]) {
+          months[monthIndex].income += entry.amount;
+        }
+      }
+    }
     
     return months;
-  }, []);
+  }, [incomeEntries]);
 
-  const isLoading = clientsLoading;
+  const isLoading = clientsLoading || incomeLoading;
 
   return (
     <Card>

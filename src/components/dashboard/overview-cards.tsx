@@ -89,10 +89,17 @@ export function OverviewCards() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    // Returning 0 for a fresh start
-    const totalIncomeThisMonth = 0;
+    const totalIncomeThisMonth =
+      incomeEntries
+        ?.filter(entry => {
+          const entryDate = new Date(entry.entryDate);
+          return entryDate >= startOfMonth;
+        })
+        .reduce((sum, entry) => sum + entry.amount, 0) || 0;
 
-    const outstandingBalance = 0;
+    const outstandingBalance = clients?.reduce((sum, client) => {
+        return client.balance > 0 ? sum + client.balance : sum;
+    }, 0) || 0;
 
     const totalClients = clients?.length || 0;
 
@@ -105,9 +112,9 @@ export function OverviewCards() {
       .length || 0;
     
     return { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth };
-  }, [clients]);
+  }, [clients, incomeEntries]);
 
-  const isLoading = clientsLoading;
+  const isLoading = clientsLoading || incomeLoading;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -15,7 +15,7 @@ import {
   useUser,
   useMemoFirebase,
 } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 
@@ -25,7 +25,11 @@ export function RecentClients() {
 
   const clientsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, `/admin_users/${user.uid}/client_accounts`), orderBy('createdAt', 'desc'));
+    return query(
+      collection(firestore, `/admin_users/${user.uid}/client_accounts`),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
   }, [firestore, user]);
 
   const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
@@ -33,15 +37,15 @@ export function RecentClients() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Client Accounts</CardTitle>
+        <CardTitle>Recent Clients</CardTitle>
         <CardDescription>
-          An overview of your client balances.
+          Your most recently added clients.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="space-y-6">
-            {[...Array(2)].map((_, i) => (
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center">
                 <Skeleton className="h-9 w-9 rounded-full" />
                 <div className="ml-4 space-y-1">
@@ -54,7 +58,7 @@ export function RecentClients() {
           </div>
         ) : (
           <div className="space-y-6">
-            {clients &&
+            {clients && clients.length > 0 ? (
               clients.map((client) => (
                 <div key={client.id} className="flex items-center">
                   <Avatar className="h-9 w-9">
@@ -74,18 +78,25 @@ export function RecentClients() {
                     <p className="text-sm font-medium leading-none">
                       {client.name}
                     </p>
-              
+                    <p className="text-sm text-muted-foreground">{client.email}</p>
                   </div>
                   <div
-                    className={cn(
+                     className={cn(
                       'ml-auto font-medium',
-                      'text-muted-foreground'
+                      client.balance > 0
+                        ? 'text-destructive'
+                        : client.balance < 0
+                        ? 'text-green-600'
+                        : 'text-muted-foreground'
                     )}
                   >
-                    ₹0.00
+                    {client.balance < 0 ? '-' : ''}₹{Math.abs(client.balance).toFixed(2)}
                   </div>
                 </div>
-              ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center">No clients found.</p>
+            )}
           </div>
         )}
       </CardContent>
