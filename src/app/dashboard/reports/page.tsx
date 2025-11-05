@@ -58,7 +58,7 @@ export default function ReportsPage() {
 
   const handleExport = async (
     formatType: 'pdf' | 'excel',
-    scope: 'monthly' | 'all' | 'yearly'
+    scope: 'monthly' | 'all'
   ) => {
     if (!user || !clients) return;
     setIsGenerating(true);
@@ -107,19 +107,6 @@ export default function ReportsPage() {
       });
       reportTitle = `Monthly Report - ${format(startDate, 'MMMM yyyy')}`;
       fileName = `monthly_report_${year}_${month}`;
-    } else if (scope === 'yearly') {
-      const startDate = new Date(parseInt(year), 0, 1);
-      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
-      filteredIncome = incomeEntries.filter((i) => {
-        const entryDate = new Date(i.entryDate);
-        return entryDate >= startDate && entryDate <= endDate;
-      });
-      filteredBills = bills.filter((b) => {
-        const billDate = b.createdAt instanceof Timestamp ? b.createdAt.toDate() : new Date(b.createdAt);
-        return billDate && billDate >= startDate && billDate <= endDate;
-      });
-      reportTitle = `Year-End Report - ${year}`;
-      fileName = `yearly_report_${year}`;
     }
 
     const incomeExportData = filteredIncome.map((i) => ({
@@ -250,27 +237,6 @@ export default function ReportsPage() {
                 </Button>
               </div>
             </div>
-          </div>
-          <div>
-            <h3 className="text-lg font-medium mb-2">Yearly Report</h3>
-             <div className="flex gap-2 flex-wrap">
-                <Button
-                  onClick={() => handleExport('pdf', 'yearly')}
-                  disabled={isGenerating}
-                  variant="secondary"
-                >
-                  <FileDown className="mr-2 h-4 w-4" />
-                  {isGenerating ? 'Generating...' : `Export ${year} (PDF)`}
-                </Button>
-                 <Button
-                  onClick={() => handleExport('excel', 'yearly')}
-                  disabled={isGenerating}
-                  variant="secondary"
-                >
-                  <FileDown className="mr-2 h-4 w-4" />
-                  {isGenerating ? 'Generating...' : `Export ${year} (Excel)`}
-                </Button>
-              </div>
           </div>
           <div>
             <h3 className="text-lg font-medium mb-2">Complete History</h3>

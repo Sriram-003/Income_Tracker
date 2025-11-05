@@ -15,7 +15,7 @@ import {
   useUser,
   useMemoFirebase,
 } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 
@@ -25,7 +25,7 @@ export function RecentClients() {
 
   const clientsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, `/admin_users/${user.uid}/client_accounts`);
+    return query(collection(firestore, `/admin_users/${user.uid}/client_accounts`), orderBy('createdAt', 'desc'));
   }, [firestore, user]);
 
   const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
@@ -83,7 +83,7 @@ export function RecentClients() {
                       client.balance === 0 && 'text-muted-foreground'
                     )}
                   >
-                    {client.balance > 0 ? '' : '-'}₹
+                    {client.balance < 0 ? '-' : ''}₹
                     {Math.abs(client.balance).toFixed(2)}
                   </div>
                 </div>
