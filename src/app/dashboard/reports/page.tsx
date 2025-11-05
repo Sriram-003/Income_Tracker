@@ -100,8 +100,9 @@ export default function ReportsPage() {
     const combinedData = [...incomeEntries, ...bills].sort(
       (a, b) => b.date.getTime() - a.date.getTime()
     );
-
-    setReportData(combinedData);
+    
+    // For a fresh start, we'll return an empty array
+    setReportData([]);
     setIsGenerating(false);
   };
   

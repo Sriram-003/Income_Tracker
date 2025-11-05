@@ -98,8 +98,7 @@ export function OverviewCards() {
         })
         .reduce((sum, entry) => sum + entry.amount, 0) || 0;
 
-    const outstandingBalance =
-      clients?.reduce((sum, client) => sum + client.balance, 0) || 0;
+    const outstandingBalance = 0; // Reset to zero
 
     const totalClients = clients?.length || 0;
 

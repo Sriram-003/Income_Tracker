@@ -83,8 +83,7 @@ export function RecentClients() {
                       0 === 0 && 'text-muted-foreground'
                     )}
                   >
-                    {0 < 0 ? '-' : ''}₹
-                    {Math.abs(0).toFixed(2)}
+                    ₹0.00
                   </div>
                 </div>
               ))}
