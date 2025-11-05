@@ -32,16 +32,8 @@ export function IncomeChart() {
   }, [firestore, user]);
   const { data: clients, isLoading: clientsLoading } = useCollection<Client>(clientsQuery);
   
-  const incomeQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    const baseQuery = collection(firestore, `admin_users/${user.uid}/income_entries`);
-    if (selectedClientId === 'all') {
-      return baseQuery;
-    }
-    return query(baseQuery, where('clientId', '==', selectedClientId));
-  }, [firestore, user, selectedClientId]);
-
-  const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeQuery);
+  const incomeEntries: IncomeEntry[] = [];
+  const incomeLoading = false;
 
   const chartData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({
