@@ -78,7 +78,12 @@ export function OverviewCards() {
 
   const { data: clients, isLoading: clientsLoading } = useCollection<Client>(clientsQuery);
   
-  const incomeEntries: IncomeEntry[] = [];
+  const incomeQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `admin_users/${user.uid}/income_entries`);
+  }, [firestore, user]);
+
+  const { data: incomeEntries, isLoading: incomeLoading } = useCollection<IncomeEntry>(incomeQuery);
   
   const { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth } = useMemo(() => {
     const now = new Date();
@@ -109,7 +114,7 @@ export function OverviewCards() {
     return { totalIncomeThisMonth, outstandingBalance, totalClients, newClientsThisMonth };
   }, [clients, incomeEntries]);
 
-  const isLoading = clientsLoading;
+  const isLoading = clientsLoading || incomeLoading;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

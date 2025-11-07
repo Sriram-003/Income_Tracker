@@ -57,9 +57,54 @@ export default function ReportsPage() {
   const generateReportData = async () => {
     if (!user || !clients) return;
     setIsGenerating(true);
+
+    const tenDaysAgo = subDays(new Date(), 10);
+    const tenDaysAgoTimestamp = Timestamp.fromDate(tenDaysAgo);
+    let combinedData: ReportItem[] = [];
+
+    // Fetch Income Entries
+    const incomeQuery = query(
+      collection(firestore, `/admin_users/${user.uid}/income_entries`),
+      where('createdAt', '>=', tenDaysAgoTimestamp)
+    );
+    const incomeSnapshot = await getDocs(incomeQuery);
+    const incomeData = incomeSnapshot.docs.map(doc => {
+      const data = doc.data() as IncomeEntry;
+      const client = clients.find(c => c.id === data.clientId);
+      return {
+        type: 'Income',
+        date: new Date(data.entryDate),
+        clientName: client?.name || 'N/A',
+        description: data.description,
+        amount: data.amount,
+      };
+    }) as ReportItem[];
+    combinedData = combinedData.concat(incomeData);
+
+    // Fetch Bills for all clients
+    for (const client of clients) {
+        const billsQuery = query(
+            collection(firestore, `/admin_users/${user.uid}/client_accounts/${client.id}/bills`),
+            where('createdAt', '>=', tenDaysAgoTimestamp)
+        );
+        const billsSnapshot = await getDocs(billsQuery);
+        const billsData = billsSnapshot.docs.map(doc => {
+            const data = doc.data() as Bill;
+            return {
+                type: 'Bill',
+                date: (data.createdAt as Timestamp).toDate(),
+                clientName: client.name,
+                description: `Bill #${doc.id.substring(0, 6)}`,
+                amount: data.totalAmount,
+            };
+        });
+        combinedData = combinedData.concat(billsData);
+    }
     
-    // For a fresh start, we'll return an empty array
-    setReportData([]);
+    // Sort by date
+    combinedData.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    setReportData(combinedData);
     setIsGenerating(false);
   };
   
@@ -165,11 +210,11 @@ export default function ReportsPage() {
                     </Table>
                   </div>
                   <div className="flex gap-2 mt-4">
-                      <Button onClick={() => handleExport('pdf')} variant="outline">
+                      <Button onClick={() => handleExport('pdf')} variant="outline" disabled={reportData.length === 0}>
                            <FileDown className="mr-2 h-4 w-4" />
                            Export PDF
                       </Button>
-                      <Button onClick={() => handleExport('excel')} variant="outline">
+                      <Button onClick={() => handleExport('excel')} variant="outline" disabled={reportData.length === 0}>
                            <FileDown className="mr-2 h-4 w-4" />
                            Export Excel
                       </Button>
